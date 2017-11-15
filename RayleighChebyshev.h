@@ -210,6 +210,7 @@ class RayleighChebyshev
     maxEigValueEst       = 0.0;
     guardValue           = 0.0;
     intervalStopConditionFlag = false;
+    hardIntervalStopFlag  = false;
 
     nonRandomStartFlag   = false;
     fixedIterationCount  = -1;
@@ -306,6 +307,16 @@ class RayleighChebyshev
     void clearIntervalStopCondition()
     {
     intervalStopConditionFlag = false;
+    }
+
+    void setHardIntervalStop(bool val = true)
+    {
+    hardIntervalStopFlag = val;
+    }
+
+    void clearHardIntervalStop()
+    {
+    hardIntervalStopFlag = false;
     }
 
     void getMinEigAndMaxEig(double iterationTol,Vtype& vStart,Otype& oP, 
@@ -1290,7 +1301,14 @@ protected:
 //  to insure that all vectors in the subspace associated with an eigenvalue with multiplicity > 1
 //  are captured.
 
+    if(hardIntervalStopFlag)
+	{
+    if(guardValue > lambdaMax)     {exitFlag = 1;}
+	}
+    else
+    {
     if(vtvEigCheck >= 10.0*subspaceTol)     {exitFlag = 1;}
+    }
 
     //
     // Shifting minEigenValue 
@@ -1684,6 +1702,7 @@ void orthogonalizeVarray(long subspaceSize)
 
     double                guardValue;  // Value of the guard eigenvalue.
     bool       intervalStopConditionFlag; // Converge based on value of guard eigenvalue
+    bool       hardIntervalStopFlag; 
     double    minEigValueEst;
     double    maxEigValueEst;
 
