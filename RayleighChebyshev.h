@@ -210,6 +210,7 @@ class RayleighChebyshev
     maxEigValueEst       = 0.0;
     guardValue           = 0.0;
     intervalStopConditionFlag = false;
+    hardIntervalStopFlag  = false;
 
     nonRandomStartFlag   = false;
     fixedIterationCount  = -1;
@@ -306,6 +307,16 @@ class RayleighChebyshev
     void clearIntervalStopCondition()
     {
     intervalStopConditionFlag = false;
+    }
+
+    void setHardIntervalStop(bool val = true)
+    {
+    hardIntervalStopFlag = val;
+    }
+
+    void clearHardIntervalStop()
+    {
+    hardIntervalStopFlag = false;
     }
 
     void getMinEigAndMaxEig(double iterationTol,Vtype& vStart,Otype& oP, 
@@ -1278,9 +1289,16 @@ protected:
 //  See if "guard" eigenvalue is greater than lambdaMax. 
 //
 
-    vtvEig     = VtAVeigValue[bufferSize-1];
-    guardValue = vtvEig;
+    if(bufferSize > 0)
+    {
+    	vtvEig     = VtAVeigValue[bufferSize-1];
+    }
+    else
+    {
+    	vtvEig     = lambdaMax;
+    }
 
+    guardValue = vtvEig;
     relErrFactor = getRelErrorFactor(lambdaMax,subspaceTol);
     vtvEigCheck = (vtvEig - lambdaMax)/relErrFactor;
 
@@ -1290,13 +1308,20 @@ protected:
 //  to insure that all vectors in the subspace associated with an eigenvalue with multiplicity > 1
 //  are captured.
 
+    if(hardIntervalStopFlag)
+	{
+    if(guardValue > lambdaMax)     {exitFlag = 1;}
+	}
+    else
+    {
     if(vtvEigCheck >= 10.0*subspaceTol)     {exitFlag = 1;}
+    }
 
     //
     // Shifting minEigenValue 
     //
-    if(subspaceIncrementSize > 0)             // New minEigValue = largest of found eigenvalues
-    {                                         // They are reversed ordered, so [bufferSize] is the largest
+    if((subspaceIncrementSize > 0)||(bufferSize == 0))     // New minEigValue = largest of found eigenvalues
+    {                                                      // They are reversed ordered, so [bufferSize] is the largest
     minEigValue = VtAVeigValue[bufferSize];
     }
     else
@@ -1311,11 +1336,15 @@ protected:
 //
 //  check for exceeding vector space dimension
 //
+
+    if(not exitFlag)
+    {
     if((foundSize + bufferSize) >= vectorDimension)
     {
      bufferSize            = vectorDimension - foundSize;
      subspaceIncrementSize = 0;
      subspaceSize          = bufferSize;
+
      VtAV.initialize(subspaceSize,subspaceSize);
      VtAVeigVector.initialize(subspaceSize,subspaceSize);
      VtAVeigValue.resize(subspaceSize,0.0);
@@ -1336,6 +1365,7 @@ protected:
     }
 
     applyCountCumulative  += applyCount;
+    }
 
 #ifdef _TIMING_
     orthoTimeCumulative   += orthoTime;
@@ -1684,6 +1714,7 @@ void orthogonalizeVarray(long subspaceSize)
 
     double                guardValue;  // Value of the guard eigenvalue.
     bool       intervalStopConditionFlag; // Converge based on value of guard eigenvalue
+    bool       hardIntervalStopFlag; 
     double    minEigValueEst;
     double    maxEigValueEst;
 
