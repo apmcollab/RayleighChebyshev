@@ -40,11 +40,10 @@
 #
 #############################################################################
 */
-#include <vector>
-using namespace std;
+#include <std::vector>
 
-#ifndef _SubspaceIteration_
-#define _SubspaceIteration_
+#ifndef SUBSPACE_ITERATION_
+#define SUBSPACE_ITERATION_
 
 template < class Vtype, class Otype, class VRandomizeOpType > class SubspaceIteration
 {
@@ -76,7 +75,7 @@ public:
     }
 
 	void applySubspaceIteration(long iterationCount, long subspaceSize, Vtype& vStart, Otype& oP,
-	VRandomizeOpType& randOp, vector<double>& eigValues, vector < Vtype > & eigVectors,
+	VRandomizeOpType& randOp, std::vector<double>& eigValues, std::vector < Vtype > & eigVectors,
 	bool computeEigVectorsFlag = true)
 	{
 	eigValues.clear();
@@ -146,7 +145,7 @@ public:
     VtAVeigVector.initialize(subspaceSize,subspaceSize);
 
 //  Form Vt*A*V. This implementation assumes A is a self-adjoint
-//  matrix with respect to the associated vector's dot product.
+//  matrix with respect to the associated std::vector's dot product.
 
     long i; long j;
 
@@ -186,9 +185,9 @@ public:
 
     if(not computeEigVectorsFlag) return;
 
-    // Construct required array of vector temporaries
+    // Construct required array of std::vector temporaries
 
-    vector < Vtype> vArrayTmp(subspaceSize);
+    std::vector < Vtype> vArrayTmp(subspaceSize);
 
 	long     k;
 	double rkk;
@@ -249,7 +248,7 @@ public:
 //  This routine assumes that the class data member
 //  vTemp has been initialized
 //
-void orthogonalizeVarray(vector< Vtype >& vArray)
+void orthogonalizeVarray(std::vector< Vtype >& vArray)
 {
     long subspaceSize = vArray.size();
 	double rkk;
@@ -260,7 +259,7 @@ void orthogonalizeVarray(vector< Vtype >& vArray)
 
     for(long k = 1; k <= subspaceSize; k++)
     {
-        rkk     = sqrt(vArray[k-1].dot(vArray[k-1]));
+        rkk     = std::sqrt(vArray[k-1].dot(vArray[k-1]));
         vArray[k-1] *= 1.0/rkk;
         for(long j = k+1; j <= subspaceSize; j++)
         {

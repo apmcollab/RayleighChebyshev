@@ -83,12 +83,10 @@
 
 
 #include <cmath>
-using namespace std;
-
 #include "LanczosCpoly.h"
 
-#ifndef __LanczosCpolyOperator__
-#define __LanczosCpolyOperator__
+#ifndef LANCZOS_C_POLY_OPERATOR_
+#define LANCZOS_C_POLY_OPERATOR_
 
 template <class Vtype, class Otype>
 class LanczosCpolyOperator

@@ -1,12 +1,10 @@
 #include <vector>
-using namespace std;
 
 #include "SubspaceIteration.h"
 #include "OpStar.h"
 
-
-#ifndef _RayleighChebyshevInitializer_
-#define _RayleighChebyshevInitializer_
+#ifndef RAYLEIGHT_CHEBYSHEV_INITIALIZER_
+#define RAYLEIGHT_CHEBYSHEV_INITIALIZER_
 //
 // This class is used to create estimates of the algebraically smallest and  largest eigenvalues of
 // a self-adjoint operator, A, and optionally, a subspace to initialize the subspace used for
@@ -83,8 +81,8 @@ public:
 
     void initialize()
     {
-    subspaceIterationCount = 3;
-    nonRandomStartFlag     = false;
+    subspaceIterationCount   = 3;
+    nonRandomStartFlag       = false;
     minIntervalPolyDegreeMax = 100;
     }
 
@@ -105,7 +103,7 @@ public:
     }
 
 	void createEigSystemEstimates(long subspaceSize, double subspaceTol, Vtype& vStart, Otype& oP,
-	VRandomizeOpType& randOp, double& lambdaMin, double& lambdaMax, vector < Vtype > & subspace)
+	VRandomizeOpType& randOp, double& lambdaMin, double& lambdaMax, std::vector < Vtype > & subspace)
 	{
 	lambdaMin = 0.0;
 	lambdaMax = 0.0;
@@ -127,8 +125,8 @@ public:
     bool squareFlag            = true;
     bool computeEigVectorsFlag = true;
 
-	vector <double> eigValues(1,0.0);
-	vector <Vtype>  eigVectors;
+	std::vector <double> eigValues(1,0.0);
+	std::vector <Vtype>  eigVectors;
 
 #ifdef _OPEN_MP_
     opStar.initialize(oP,signOp,shift,squareFlag);
@@ -185,14 +183,14 @@ public:
     //
     // If we have a positive Rayleigh quotient, or one whose magnitude differs
     // from the square root of the magnitude of the -A^2 eigenvalue, then use
-    // as an upper bound sqrt(abs(eigValues[0])). This provides a good
+    // as an upper bound sqrt(std::abs(eigValues[0])). This provides a good
     // upper bound even in the case when there is +/- eigensystem degeneracy.
     //
-    if( (abs(abs(extremalEig) - sqrt(abs(eigValues[0])))  > subspaceTol) || (extremalEig >= 0.0) )
+    if( (std::abs(std::abs(extremalEig) - sqrt(std::abs(eigValues[0])))  > subspaceTol) || (extremalEig >= 0.0) )
     {
     // set lambdaMax and clear the eigenvectors array
 
-    lambdaMax = sqrt(abs(eigValues[0]));
+    lambdaMax = sqrt(std::abs(eigValues[0]));
     eigVectors.clear();
     }
     else // In this case we have a high-quality estimate of the lowest eigen pair
@@ -210,7 +208,7 @@ public:
     // now work with A + ||lambdaMin|| to obtain an estimate of lambdaMax
 
 	signOp                = +1;
-    shift                 = abs(lambdaMin);
+    shift                 = std::abs(lambdaMin);
     squareFlag            = false;
     computeEigVectorsFlag = true;
 
@@ -224,10 +222,10 @@ public:
     subspaceIter_OpStarRef.applySubspaceIteration(subspaceIterationCount, maxEstimateSubspaceSize, vStart, opStarRef, randOp, eigValues, eigVectors, computeEigVectorsFlag);
 #endif
 
-    // Now work with -(A + abs(lambdaMin))
+    // Now work with -(A + std::abs(lambdaMin))
 
 	signOp                = -1;
-    shift                 = abs(lambdaMin);
+    shift                 = std::abs(lambdaMin);
     squareFlag            = false;
     computeEigVectorsFlag = true;
 
@@ -334,10 +332,10 @@ public:
 }
 //
 //  orthogonalizeVarray uses modified Gram-Schmidt to orthonoramlize
-//  the vectors in vArray. It is assumed that the input vector
+//  the vectors in vArray. It is assumed that the input std::vector
 //  vTemp has been initialized.
 //
-void orthogonalizeVarray(vector< Vtype >& vArray, Vtype& vTemp)
+void orthogonalizeVarray(std::vector< Vtype >& vArray, Vtype& vTemp)
 {
     long subspaceSize = vArray.size();
 	double rkk;

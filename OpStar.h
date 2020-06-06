@@ -1,5 +1,5 @@
-#ifndef _OpStar_
-#define _OpStar_
+#ifndef OP_STAR_
+#define OP_STAR_
 //
 //###################################################################################
 //                                 Class OpStar
@@ -116,7 +116,7 @@ template < class Vtype, class Otype > class OpStar
 	double smallShiftIgnoreValue = 1.0e-15;
 
 	bool   useShift = false;
-	if(fabs(shift) > smallShiftIgnoreValue)
+	if(std::abs(shift) > smallShiftIgnoreValue)
 	{
 	useShift = true;
 	}
@@ -256,7 +256,7 @@ template < class Vtype, class Otype > class OpStarRef
 	double smallShiftIgnoreValue = 1.0e-15;
 
 	bool   useShift = false;
-	if(fabs(shift) > smallShiftIgnoreValue)
+	if(std::abs(shift) > smallShiftIgnoreValue)
 	{
 	useShift = true;
 	}

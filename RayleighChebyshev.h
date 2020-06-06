@@ -8,9 +8,9 @@
    for symmetric linear operators, but symmetry is not exploited in
    the implementation of the procedure.
 
-   The eigenvalues are returned in a vector<double>  instance
+   The eigenvalues are returned in a std::vector<double>  instance
    while the eigenvectors are internally allocated and returned in
-   a vector<Vtype> class instance.
+   a std::vector<Vtype> class instance.
 
    OpenMP multi-thread usage is enabled by defining _OPENMP
 
@@ -24,7 +24,7 @@
 
    Vtype  
    ---------
-   A vector class with the following member functions:
+   A std::vector class with the following member functions:
 
    Vtype()                            (null constructor)
    Vtype(const Vtype&)                (copy constructor)
@@ -42,13 +42,13 @@
 
    if _VBLAS_ is defined, then the Vtype class must also possess member functions
 
-   double nrm2()                                            (2-norm based on vector dot product)
+   double nrm2()                                            (2-norm based on std::vector dot product)
    void   scal(double alpha)                                (scalar multiplication)
    void   axpy(double alpha,const Vtype& x)                 (this = this + alpha*x)
    void   axpby(double alpha,const Vtype& x, double beta)   (this = alpha*x + beta*this)
 
-   If OpenMP is defined, then the vector class should NOT SET any class or static
-   variables of the vector class arguments to copy, dot, or axpy. Also,
+   If OpenMP is defined, then the std::vector class should NOT SET any class or static
+   variables of the std::vector class arguments to copy, dot, or axpy. Also,
    no class variables or static variables should be set by nrm2().
 
 
@@ -77,19 +77,19 @@
 
    void randomize(Vtype& V)     
 
-   which initializes the elements of the Vtype vector V to have random values.
+   which initializes the elements of the Vtype std::vector V to have random values.
 
    ############################################################################
 
 
 	###########################################################################
 
-	!!!! Important restriction on the vector classes and operator classes
+	!!!! Important restriction on the std::vector classes and operator classes
 	used by the RayleighChebyshev template.
 
 	###########################################################################
 
-	When specifying a vector class to be used with a RayleighChebyshev instance, it is critical
+	When specifying a std::vector class to be used with a RayleighChebyshev instance, it is critical
 	that the copy constructor handle null instances correctly (e.g. instances that were created
 	with the null constructor).
 
@@ -98,7 +98,7 @@
 	the copy constructor code.
 
 	This coding restriction arises because of the use of stl::vectors of the specified
-	vector class; when intializing it creates a null instance and apparently calls the
+	std::vector class; when intializing it creates a null instance and apparently calls the
 	copy constructor to create the duplicates required of the array, rather than
 	calling the null constructor multiple times.
 
@@ -150,17 +150,17 @@
 #include <iostream>
 #include <cstdlib>
 #include <vector>
-using namespace std;
 
-#ifndef _RayleighChebyshev_
-#define _RayleighChebyshev_
 
-#define JacobiTol 1.0e-12
-#define Default_Max_Inner_LoopCount 10000
-#define Default_PolyDegreeMax 100
+#ifndef RAYLEIGH_CHEBYSHEV_
+#define RAYLEIGH_CHEBYSHEV_
 
-#ifndef  _RayleighChebyshev_SMALL_TOL_
-#define  _RayleighChebyshev_SMALL_TOL_ 1.0e-10
+#define JACOBI_TOL                   1.0e-12
+#define DEFAULT_MAX_INNER_LOOP_COUNT 10000
+#define DEFAULT_POLY_DEGREE_MAX      100
+
+#ifndef  RAYLEIGH_CHEBYSHEV_SMALL_TOL_
+#define  RAYLEIGH_CHEBYSHEV_SMALL_TOL_ 1.0e-10
 #endif
 
 #include "LanczosCpolyOperator.h"
@@ -204,8 +204,8 @@ class RayleighChebyshev
     verboseFlag          = false;
     eigDiagnosticsFlag   = false;
 	verboseSubspaceFlag  = false;
-    jacobiMethod.tol     = JacobiTol;
-    minIntervalPolyDegreeMax   = Default_PolyDegreeMax;
+    jacobiMethod.tol     = JACOBI_TOL;
+    minIntervalPolyDegreeMax   = DEFAULT_POLY_DEGREE_MAX;
     minEigValueEst       = 0.0;
     maxEigValueEst       = 0.0;
     guardValue           = 0.0;
@@ -214,7 +214,7 @@ class RayleighChebyshev
 
     nonRandomStartFlag   = false;
     fixedIterationCount  = -1;
-    maxInnerLoopCount    = Default_Max_Inner_LoopCount;
+    maxInnerLoopCount    = DEFAULT_MAX_INNER_LOOP_COUNT;
 
     orthogSubspacePtr    = 0;
     }
@@ -233,12 +233,12 @@ class RayleighChebyshev
 	{
 	double relErrFactor = 1.0;
 
-    if(fabs(val)*tol > _RayleighChebyshev_SMALL_TOL_ ){relErrFactor = fabs(val);}
-    else                                              {relErrFactor = _RayleighChebyshev_SMALL_TOL_/tol;}
+    if(std::abs(val)*tol > RAYLEIGH_CHEBYSHEV_SMALL_TOL_ ){relErrFactor = std::abs(val);}
+    else                                              {relErrFactor = RAYLEIGH_CHEBYSHEV_SMALL_TOL_/tol;}
     return relErrFactor;
 	}
 
-    void setOrthogonalSubspace(vector < Vtype >* orthogSubspacePtr)
+    void setOrthogonalSubspace(std::vector < Vtype >* orthogSubspacePtr)
     {
     this->orthogSubspacePtr = orthogSubspacePtr;
     }
@@ -252,7 +252,7 @@ class RayleighChebyshev
     {maxInnerLoopCount  = val;}
 
     void resetMaxInnerLoopCount()
-    {maxInnerLoopCount  = Default_Max_Inner_LoopCount;}
+    {maxInnerLoopCount  = DEFAULT_MAX_INNER_LOOP_COUNT;}
 
     void setFixedIterationCount(long val)
     {fixedIterationCount  = val;}
@@ -415,20 +415,20 @@ class RayleighChebyshev
 // increase the gap between the desired states and other states in
 // order to improve performance.
 //
-// vStart : A vector instance used as a template for for the
+// vStart : A std::vector instance used as a template for for the
 //          the construction of all eigenvectors computed.
 //
 //    oP  : The linear operator whose eigenpairs are sought
 //
 // randOp : An operator that assigns random values to the elements
-//          of a vector. Used for initial guesses.
+//          of a std::vector. Used for initial guesses.
 //
 // Input/Output
 //
-// eigValues  : vector of doubles to capture the eigenvalues
+// eigValues  : std::vector of doubles to capture the eigenvalues
 //
-// eigVectors : vector of vectors to capture the eigenvectors.
-//              If this vector is non-empty, then the non-null
+// eigVectors : std::vector of vectors to capture the eigenvectors.
+//              If this std::vector is non-empty, then the non-null
 //              vectors are used as starting vectors for the
 //              subspace iteration.
 //
@@ -441,8 +441,8 @@ class RayleighChebyshev
     //
     long getMinEigenSystem(long eigCount, double minEigValueEst, double maxEigValueBound,
     double subspaceTol, long subspaceIncrementSize, long bufferSize, 
-    Vtype& vStart, Otype& oP, VRandomizeOpType& randOp, vector<double>& eigValues,
-    vector < Vtype > & eigVectors)
+    Vtype& vStart, Otype& oP, VRandomizeOpType& randOp, std::vector<double>& eigValues,
+    std::vector < Vtype > & eigVectors)
     {
 
     long maxEigensystemDim = eigCount;
@@ -459,7 +459,7 @@ class RayleighChebyshev
 //
     long getMinEigenSystem(long eigCount, double subspaceTol, long subspaceIncrementSize, 
     long bufferSize, Vtype& vStart, Otype& oP, VRandomizeOpType& randOp, 
-    vector<double>&  eigValues, vector < Vtype > & eigVectors)
+    std::vector<double>&  eigValues, std::vector < Vtype > & eigVectors)
     {
 
     double minFinderTol              = subspaceTol;
@@ -473,9 +473,9 @@ class RayleighChebyshev
     // Increase maxEigValue slightly to be on the safe side if we don't have
     // the identity.
     //
-    if(fabs(maxEigValue - minEigValue) > 1.0e-12)
+    if(std::abs(maxEigValue - minEigValue) > 1.0e-12)
     {
-    maxEigValue += 0.001*fabs(maxEigValue - minEigValue);
+    maxEigValue += 0.001*std::abs(maxEigValue - minEigValue);
     }
 
     this->clearIntervalStopCondition();
@@ -492,8 +492,8 @@ class RayleighChebyshev
 
     long getMinIntervalEigenSystem(double lambdaMax, double subspaceTol, 
     long subspaceIncrementSize, long bufferSize, long maxEigensystemDim, 
-    Vtype& vStart,Otype& oP, VRandomizeOpType& randOp, vector<double>&  eigValues,
-    vector < Vtype > & eigVectors)
+    Vtype& vStart,Otype& oP, VRandomizeOpType& randOp, std::vector<double>&  eigValues,
+    std::vector < Vtype > & eigVectors)
     {
     double minFinderTol              = subspaceTol;
     
@@ -517,9 +517,9 @@ class RayleighChebyshev
     // Increase maxEigValue slightly to be on the safe side if we don't have
     // the identity.
     //
-    if(fabs(maxEigValue - minEigValue) > 1.0e-12)
+    if(std::abs(maxEigValue - minEigValue) > 1.0e-12)
     {
-    maxEigValue += 0.001*fabs(maxEigValue - minEigValue);
+    maxEigValue += 0.001*std::abs(maxEigValue - minEigValue);
     }
 
     this->setIntervalStopCondition();
@@ -543,8 +543,8 @@ class RayleighChebyshev
 
     long getMinIntervalEigenSystem(double minEigValueEst, double lambdaMax, double maxEigValueBound,
     double subspaceTol, long subspaceIncrementSize, long bufferSize, long maxEigensystemDim,
-    Vtype& vStart, Otype& oP, VRandomizeOpType& randOp, vector<double>&  eigValues,
-    vector < Vtype > & eigVectors)
+    Vtype& vStart, Otype& oP, VRandomizeOpType& randOp, std::vector<double>&  eigValues,
+    std::vector < Vtype > & eigVectors)
     {
     this->setIntervalStopCondition();
 
@@ -564,13 +564,13 @@ protected:
 
     long getMinIntervalEigenSystem_Base(double minEigValue, double lambdaMax, double maxEigValue,
     double subspaceTol, long subspaceIncrementSize, long bufferSize, long maxEigensystemDim, 
-    Vtype& vStart, Otype& oP, VRandomizeOpType& randOp, vector<double>&  eigValues,
-    vector < Vtype > & eigVectors)
+    Vtype& vStart, Otype& oP, VRandomizeOpType& randOp, std::vector<double>&  eigValues,
+    std::vector < Vtype > & eigVectors)
     {
 
     // Insure that subspaceTol isn't too small
 
-    if(subspaceTol < _RayleighChebyshev_SMALL_TOL_ ) {subspaceTol = _RayleighChebyshev_SMALL_TOL_; }
+    if(subspaceTol < RAYLEIGH_CHEBYSHEV_SMALL_TOL_ ) {subspaceTol = RAYLEIGH_CHEBYSHEV_SMALL_TOL_; }
     double relErrFactor;
 
     //
@@ -601,9 +601,9 @@ protected:
     long   subspaceSize;   
     long      foundSize;
 
-    vector<double>     oldEigs;
-    vector<double>    eigDiffs;
-    vector<double> oldEigDiffs;
+    std::vector<double>     oldEigs;
+    std::vector<double>    eigDiffs;
+    std::vector<double> oldEigDiffs;
     double             eigDiff;
 
     lambdaStar        = maxEigValue;
@@ -619,9 +619,9 @@ protected:
     if(subspaceSize > vectorDimension)
     {
      subspaceSize = vectorDimension;
-     if(bufferSize > vectorDimension) 
+     if(bufferSize > vectorDimension)
      {
-        bufferSize = vectorDimension; 
+        bufferSize = vectorDimension;
         subspaceIncrementSize = 0;
      }
      else
@@ -850,11 +850,11 @@ protected:
 //
 
     relErrFactor = getRelErrorFactor(minEigValue,subspaceTol);
-    eigDiff = fabs(minEigValue - lambdaStar)/relErrFactor;
+    eigDiff = std::abs(minEigValue - lambdaStar)/relErrFactor;
     eMin = eigDiff;
 
     relErrFactor = getRelErrorFactor(maxEigValue,subspaceTol);
-    eMax = fabs(maxEigValue - lambdaStar)/relErrFactor;
+    eMax = std::abs(maxEigValue - lambdaStar)/relErrFactor;
 
     if // Identity matrix
     ((eMin < subspaceTol)&&(eMax < subspaceTol))
@@ -977,7 +977,7 @@ protected:
 
     for(k = 1; k <= subspaceSize; k++)
     {
-        rkk     = sqrt(vArray[k-1].dot(vArray[k-1]));
+        rkk     = std::sqrt(vArray[k-1].dot(vArray[k-1]));
         vArray[k-1] *= 1.0/rkk;
         for(j = k+1; j <= subspaceSize; j++)
         {
@@ -1115,7 +1115,7 @@ protected:
     
     for(i = 0; i < subspaceIncrementSize + guardStopValue; i++)
     {
-    eigDiff = fabs(VtAVeigValue[subspaceSize - i - 1] - oldEigs[subspaceSize - i - 1]);
+    eigDiff = std::abs(VtAVeigValue[subspaceSize - i - 1] - oldEigs[subspaceSize - i - 1]);
 
 
     relErrFactor = getRelErrorFactor(oldEigs[subspaceSize - i - 1],subspaceTol);
@@ -1141,9 +1141,9 @@ protected:
     {
     	for(i = 0; i < subspaceIncrementSize+1; i++)
     	{
-          if(fabs(oldEigDiffs[i]) > subspaceTol/10.0)
+          if(std::abs(oldEigDiffs[i]) > subspaceTol/10.0)
           {
-          eigDiffRatio += fabs(eigDiffs[i]/oldEigDiffs[i]);
+          eigDiffRatio += std::abs(eigDiffs[i]/oldEigDiffs[i]);
           diffCount++;
           }
     	}
@@ -1189,7 +1189,7 @@ protected:
 
 #ifndef _VBLAS_
     //
-    // We have subspace convergence so we now create eigenvectors 
+    // We have subspace convergence so we now create eigenvectors
     // from the current subspace
     //
     for(k = 0; k < subspaceSize; k++)
@@ -1210,7 +1210,7 @@ protected:
 #ifdef _VBLAS_
 
    //
-    // We have subspace convergence so we now create eigenvectors 
+    // We have subspace convergence so we now create eigenvectors
     // from the current subspace
     //
 #ifdef _OPENMP
@@ -1240,7 +1240,7 @@ protected:
 //
     long checkIndexCount;
 
-    if(foundSize + subspaceSize < vectorDimension) 
+    if(foundSize + subspaceSize < vectorDimension)
     {checkIndexCount = subspaceIncrementSize;}
     else 
     {checkIndexCount = subspaceSize;}
@@ -1304,7 +1304,7 @@ protected:
 
 
 //  We assume that states are degenerate if |lambda[i] - lambda[i+1]|/relErrFactor < 10.0*subspaceTol
-//  and hence require a relative gap of size 10.0*subspaceTol between lambdaMax and the guard vector
+//  and hence require a relative gap of size 10.0*subspaceTol between lambdaMax and the guard std::vector
 //  to insure that all vectors in the subspace associated with an eigenvalue with multiplicity > 1
 //  are captured.
 
@@ -1334,7 +1334,7 @@ protected:
     starDegree = 1;
     starBound = maxEigValue;
 //
-//  check for exceeding vector space dimension
+//  check for exceeding std::vector space dimension
 //
 
     if(not exitFlag)
@@ -1559,13 +1559,13 @@ protected:
 
 // Internal utility routines and class data
 
-    void expandArray(vector<double>& v, long expandSize)
+    void expandArray(std::vector<double>& v, long expandSize)
     {
     long origSize = v.size();
     v.resize(origSize+expandSize,0.0);
     }
 
-    void expandVector(vector< Vtype >& v, long expandSize)
+    void expandVector(std::vector< Vtype >& v, long expandSize)
     {
     long origSize = v.size();
     v.resize(origSize+expandSize);
@@ -1579,8 +1579,8 @@ protected:
 //
 //  This routine assumes that vTemp has been initialized
 //
-    void OrthogonalizeAtoB(vector< Vtype >& Avectors, long indexA_start, long indexA_end,
-    vector< Vtype >&  Bvectors, long indexB_start, long indexB_end)
+    void OrthogonalizeAtoB(std::vector< Vtype >& Avectors, long indexA_start, long indexA_end,
+    std::vector< Vtype >&  Bvectors, long indexB_start, long indexB_end)
     {
     double rkj;
     double rkk;
@@ -1601,7 +1601,7 @@ protected:
     }
     for(k = indexA_start; k <= indexA_end; k++)
     {
-    rkk           = sqrt(Avectors[k].dot(Avectors[k]));
+    rkk           = std::sqrt(Avectors[k].dot(Avectors[k]));
     Avectors[k]  *= 1.0/rkk;
     }
 #endif
@@ -1647,7 +1647,7 @@ void orthogonalizeVarray(long subspaceSize)
 
     for(long k = 1; k <= subspaceSize; k++)
     {
-        rkk     = sqrt(vArray[k-1].dot(vArray[k-1]));
+        rkk     = std::sqrt(vArray[k-1].dot(vArray[k-1]));
         vArray[k-1] *= 1.0/rkk;
         for(long j = k+1; j <= subspaceSize; j++)
         {
@@ -1686,19 +1686,19 @@ void orthogonalizeVarray(long subspaceSize)
     bool verboseFlag;
     bool eigDiagnosticsFlag;
 
-    vector< Vtype >        vArray;
-    vector< Vtype >     vArrayTmp;
+    std::vector< Vtype >        vArray;
+    std::vector< Vtype >     vArrayTmp;
 
-    vector< Vtype >* orthogSubspacePtr; // A pointer to an array of vectors defining
+    std::vector< Vtype >* orthogSubspacePtr; // A pointer to an array of vectors defining
                                         // a subspace to which the eigensystem
                                         // determination will be carried out
                                         // orthogonal to.
 
     Vtype vTemp;
 
-    RC_Double2Darray  VtAV;
-    RC_Double2Darray  VtAVeigVector;
-    vector<double> VtAVeigValue;
+    RC_Double2Darray       VtAV;
+    RC_Double2Darray       VtAVeigVector;
+    std::vector<double>    VtAVeigValue;
 
     double* VtAVdataPtr;
     double* VtAVeigValueDataPtr;
@@ -1712,9 +1712,9 @@ void orthogonalizeVarray(long subspaceSize)
 
     JacobiDiagonalizer jacobiMethod;
 
-    double                guardValue;  // Value of the guard eigenvalue.
-    bool       intervalStopConditionFlag; // Converge based on value of guard eigenvalue
-    bool       hardIntervalStopFlag; 
+    double    guardValue;                // Value of the guard eigenvalue.
+    bool      intervalStopConditionFlag; // Converge based on value of guard eigenvalue
+    bool      hardIntervalStopFlag;
     double    minEigValueEst;
     double    maxEigValueEst;
 
@@ -1723,9 +1723,9 @@ void orthogonalizeVarray(long subspaceSize)
     long  fixedIterationCount;
 };
 
-#undef   JacobiTol
-#undef   Default_Max_Inner_LoopCount
-#undef  _RayleighChebyshev_SMALL_TOL_
+#undef   JACOBI_TOL
+#undef   DEFAULT_MAX_INNER_LOOP_COUNT
+#undef   RAYLEIGH_CHEBYSHEV_SMALL_TOL_
 
 #endif
 

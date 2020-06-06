@@ -25,7 +25,7 @@
 
    void randomize(Vtype& V)     
 
-   which initializes the elements of the Vtype vector V to have random values.
+   which initializes the elements of the Vtype std::vector V to have random values.
 
    ############################################################################
 
@@ -49,7 +49,7 @@
 
     Aug. 17, 2006: Removed the dependency on cammva
 
-    March, 7, 2012 : Removed the dependency on vector<double>
+    March, 7, 2012 : Removed the dependency on std::vector<double>
 
 */
 /*
@@ -73,23 +73,21 @@
 #############################################################################
 */
 
-#ifndef __LanczosMaxMinFinder__
-#define __LanczosMaxMinFinder__
+#ifndef LANCZOS_MAX_MIN_FINDER_
+#define LANCZOS_MAX_MIN_FINDER_
 
-#ifndef  _LANCZOS_SMALL_TOL_
-#define  _LANCZOS_SMALL_TOL_ 1.0e-10
+#ifndef  LANCZOS_SMALL_TOL_
+#define  LANCZOS_SMALL_TOL_ 1.0e-10
 #endif
 
-#ifndef  __LanczosMaxMinFinder__ITERATION_MAX
-#define  __LanczosMaxMinFinder__ITERATION_MAX  1000 
+#ifndef  LANCZOS_MAX_MIN_FINDER_ITERATION_MAX
+#define  LANCZOS_MAX_MIN_FINDER_ITERATION_MAX  1000
 #endif
 
 #include <iostream>
 #include <cmath>
 #include <cstdio>
 #include "Dstebz_C.h"
-
-using namespace std;
 
 /*
 extern "C" int dstebz_(char *range, char *order, long *n, double 
@@ -119,7 +117,7 @@ LanczosMaxMinFinder(long maxIterCount)
 
 void initialize()
 {
-    this->iterationMaximumCount      =   __LanczosMaxMinFinder__ITERATION_MAX;
+    this->iterationMaximumCount      =   LANCZOS_MAX_MIN_FINDER_ITERATION_MAX;
     this->verboseFlag                = 0;
     this->exactDiagnosticFlag        = 0;
     this->maxExact                   = 0.0;
@@ -154,8 +152,8 @@ double getRelErrorFactor(double val, double tol)
 {
 	double relErrFactor = 1.0;
 
-    if(fabs(val)*tol > _LANCZOS_SMALL_TOL_ ){relErrFactor = fabs(val);}
-    else                                    {relErrFactor = _LANCZOS_SMALL_TOL_/tol;}
+    if(std::abs(val)*tol > LANCZOS_SMALL_TOL_ ){relErrFactor = std::abs(val);}
+    else                                    {relErrFactor = LANCZOS_SMALL_TOL_/tol;}
     return relErrFactor;
 }
 
@@ -228,13 +226,13 @@ VRandomizeOpType& randOp, double& minEigValue, double& maxEigValue)
     if(errorTolerance > 0.01) errorTolerance = 0.01; 
 
     double tol       = errorTolerance;
-    if(tol < _LANCZOS_SMALL_TOL_ ) { tol = _LANCZOS_SMALL_TOL_; }
+    if(tol < LANCZOS_SMALL_TOL_ ) { tol = LANCZOS_SMALL_TOL_; }
     double relErrFactor;
 //
 //  Create initial vectors
 //
 	randOp.randomize(v);
-    vNorm   = sqrt(v.dot(v));
+    vNorm   = std::sqrt(v.dot(v));
     v      *= 1.0/vNorm;
     w       = v;
     wTmp    = v;
@@ -279,7 +277,7 @@ VRandomizeOpType& randOp, double& minEigValue, double& maxEigValue)
 //
         if(k != 0)
         {
-            if(fabs(beta[k-1]) > 1.0e-14)
+            if(std::abs(beta[k-1]) > 1.0e-14)
             {
                 wTmp = w;
                 w    = v;
@@ -298,7 +296,7 @@ VRandomizeOpType& randOp, double& minEigValue, double& maxEigValue)
         wTmp *= -alpha[k];
         v    += wTmp;
 
-        beta[k]  = sqrt(fabs(v.dot(v))); // beta(k) = norm_2(v);
+        beta[k]  = std::sqrt(std::abs(v.dot(v))); // beta(k) = norm_2(v);
         k   += 1;                       // k = k+1
 //
 //      Every five steps compute extremal eigenvalues 
@@ -306,18 +304,18 @@ VRandomizeOpType& randOp, double& minEigValue, double& maxEigValue)
 //      on the values of the differences between successive approximations
 //      and the rate at which these differences are decreasing.
 //
-//      Specifically if d_(k) = fabs( eVal_(k) - eVal_(k-1) )
+//      Specifically if d_(k) = std::abs( eVal_(k) - eVal_(k-1) )
 //      and          rate_k   = d_(k)/d_(k-1)
 //
 //      I use a scaled relative error
 //
-//      when fabs(eVal(k)) > valTol
+//      when std::abs(eVal(k)) > valTol
 //
-//      error_k = (rate_k/(1. - rate_k))*d_(k)/fabs(eVal(k)) < tol 
+//      error_k = (rate_k/(1. - rate_k))*d_(k)/std::abs(eVal(k)) < tol
 //
 //      else
 //
-//      error_k = (rate_k/(1. - rate_k))*d_(k)/fabs(valTol) < tol 
+//      error_k = (rate_k/(1. - rate_k))*d_(k)/std::abs(valTol) < tol
 //
 //      This formula comes about by knowing that the eigenvalues form 
 //      an ever increasing sequence of values with differences changing
@@ -359,15 +357,15 @@ VRandomizeOpType& randOp, double& minEigValue, double& maxEigValue)
         {
 
         relErrFactor = getRelErrorFactor(lanczosMax,tol);
-        maxDiffError = fabs(lanczosMax-eigMaxOld)/(relErrFactor);
+        maxDiffError = std::abs(lanczosMax-eigMaxOld)/(relErrFactor);
 
         relErrFactor = getRelErrorFactor(lanczosMin,tol);
-        minDiffError = fabs(lanczosMin-eigMinOld)/(relErrFactor);
+        minDiffError = std::abs(lanczosMin-eigMinOld)/(relErrFactor);
 
         if(rateCompareFlag == 0)
         {
-        diffMaxA = fabs(lanczosMax-eigMaxOld);
-        diffMinA = fabs(lanczosMin-eigMinOld);
+        diffMaxA = std::abs(lanczosMax-eigMaxOld);
+        diffMinA = std::abs(lanczosMin-eigMinOld);
         rateCompareFlag = 1;
         }
         else // estimate rate if there are sufficient digits
@@ -375,7 +373,7 @@ VRandomizeOpType& randOp, double& minEigValue, double& maxEigValue)
 
         if(maxDiffError > 1.0e-09)
         {
-        diffMaxB   = fabs(lanczosMax-eigMaxOld);
+        diffMaxB   = std::abs(lanczosMax-eigMaxOld);
         rateEigMax = diffMaxB/diffMaxA;
         }
         else
@@ -386,7 +384,7 @@ VRandomizeOpType& randOp, double& minEigValue, double& maxEigValue)
 
         if(minDiffError > 1.0e-09)
         {
-        diffMinB   = fabs(lanczosMin-eigMinOld);
+        diffMinB   = std::abs(lanczosMin-eigMinOld);
         rateEigMin = diffMinB/diffMinA;
         }
         else
@@ -415,10 +413,10 @@ VRandomizeOpType& randOp, double& minEigValue, double& maxEigValue)
         if(exactDiagnosticFlag == 1)
         {
         relErrFactor = getRelErrorFactor(maxError,tol);
-        maxError = fabs(maxExact - lanczosMax)/relErrFactor;
+        maxError = std::abs(maxExact - lanczosMax)/relErrFactor;
 
         relErrFactor = getRelErrorFactor(minError,tol);
-        minError = fabs(minExact - lanczosMin)/relErrFactor;
+        minError = std::abs(minExact - lanczosMin)/relErrFactor;
         }
 
         if((verboseFlag == 1)&&(exactDiagnosticFlag == 1))
@@ -516,26 +514,26 @@ double getMaxEigenvalue(double errorTolerance, Vtype& v, Vtype& w, Vtype& wTmp, 
     bool         minEigFlag;
 
 
-    vector<double>  alpha;
-    vector<double>   beta;
+    std::vector<double>  alpha;
+    std::vector<double>   beta;
 
-    vector<double>  D;
-    vector<double>  E;
-    vector<double>  eigMinVector;
-    vector<double>  eigMaxVector;
+    std::vector<double>  D;
+    std::vector<double>  E;
+    std::vector<double>  eigMinVector;
+    std::vector<double>  eigMaxVector;
 
     Dstebz_C        triEigRoutine;
 
 
 
-vector<double>  getLargestSymTriEigValues(long nValues, vector<double> & Diag,  vector<double> & UpDiag)
+std::vector<double>  getLargestSymTriEigValues(long nValues, std::vector<double> & Diag,  std::vector<double> & UpDiag)
 {
 	long i;
 
 	long N = Diag.size();
 
-    vector<double>  eVals(N);
-	vector<double>  eValsReturn(nValues);
+    std::vector<double>  eVals(N);
+	std::vector<double>  eValsReturn(nValues);
 //
 //  Input paramters 
 //
@@ -585,14 +583,14 @@ vector<double>  getLargestSymTriEigValues(long nValues, vector<double> & Diag,  
 	return eValsReturn;
 }
 
-vector<double>  getLowestSymTriEigValues(long nValues, vector<double> & Diag,  vector<double> & UpDiag)
+std::vector<double>  getLowestSymTriEigValues(long nValues, std::vector<double> & Diag,  std::vector<double> & UpDiag)
 {
 	long i;
 
 	long N = Diag.size();
 
-    vector<double>  eVals(N);
-	vector<double>  eValsReturn(nValues);
+    std::vector<double>  eVals(N);
+	std::vector<double>  eValsReturn(nValues);
 //
 //  Input paramters 
 //
@@ -644,6 +642,7 @@ vector<double>  getLowestSymTriEigValues(long nValues, vector<double> & Diag,  v
 
 };
 
-#undef _LANCZOS_SMALL_TOL_
+#undef LANCZOS_MAX_MIN_FINDER_ITERATION_MAX
+#undef LANCZOS_SMALL_TOL_
 #endif
  

@@ -1,7 +1,7 @@
-#ifndef __JacobiDiagonalizer__
-#define __JacobiDiagonalizer__
+#ifndef  RC_JACOBI_DIAGONALIZER_
+#define  RC_JACOBI_DIAGONALIZER_
 
-#define JacobiDiagonalizerTol 1.0e-15
+#define JACOBI_DIAGONALIZER_TOL 1.0e-15
 
 
 //
@@ -54,7 +54,7 @@ Version : Tue Feb 14 16:02:58 2012
 
 #include <cmath>
 #include <iostream>
-using namespace std;
+
 //
 // Jacobi
 
@@ -303,7 +303,7 @@ void computeEigenDecomposition()
 {
     double omega          = OffFrobeniusNorm2();
     double N              = (matrixDimension*(matrixDimension-1))/2.0;
-    double tauThreshold   = sqrt(omega/N);
+    double tauThreshold   = std::sqrt(omega/N);
     int    rotFlag;
     double omegaIncrement;
     double omegaBase;
@@ -319,7 +319,7 @@ void computeEigenDecomposition()
     double signTau = 1.0;
     long sweepCount = 0;
 
-    while(tauThreshold > JacobiDiagonalizerTol)
+    while(tauThreshold > JACOBI_DIAGONALIZER_TOL)
     {
     rotFlag        = 0;
     omegaIncrement = 0.0;
@@ -334,7 +334,7 @@ void computeEigenDecomposition()
     {
     for(j = i+1; j < matrixDimension; j++)
     {
-		if(fabs(M(i,j)) > tauThreshold)
+		if(std::abs(M(i,j)) > tauThreshold)
 		{
 
 		omegaIncrement += M(i,j)*M(i,j);
@@ -349,14 +349,14 @@ void computeEigenDecomposition()
         omegaBase      = omega;
         }
 
-		tauThreshold   = sqrt(omega/N);
+		tauThreshold   = std::sqrt(omega/N);
 
         M1     =  M(i,i)      - M(j,j);
         M2     =  diagData[i] - diagData[j];
 		tau     = (M1 + M2)/(2.0*M(i,j));
 		signTau = (tau >= 0.0) ? 1.0 : -1.0;
-		t       = signTau/(fabs(tau) + sqrt(1.0 + tau*tau));
-		c       = 1.0/(sqrt(1.0 + t*t));
+		t       = signTau/(std::abs(tau) + std::sqrt(1.0 + tau*tau));
+		c       = 1.0/(std::sqrt(1.0 + t*t));
 		s       = c*t; 
 
 		applyJacobiTransformation(i,j,c,s,t);
@@ -378,7 +378,7 @@ void computeEigenDecomposition()
     //
 
     omega          = OffFrobeniusNorm2();
-    tauThreshold   = sqrt(omega/N);
+    tauThreshold   = std::sqrt(omega/N);
     sweepCount++;
 
     //cout << "Threshold : " << tauThreshold << endl;
@@ -466,5 +466,9 @@ long        matrixDimension;
 long         matrixDataSize;
 };
 
+#undef JACOBI_DIAGONALIZER_TOL
+
 #endif
+
+
  

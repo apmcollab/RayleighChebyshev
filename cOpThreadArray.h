@@ -1,5 +1,6 @@
-#ifndef _cOpThreadArray_
-#define _cOpThreadArray_
+#ifndef  C_OP_THREADING_ARRAY_
+#define  C_OP_THREADING_ARRAY_
+
 #include <omp.h>
 #include "LanczosCpolyOperator.h"
 /**

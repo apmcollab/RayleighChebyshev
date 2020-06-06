@@ -103,11 +103,10 @@
 #############################################################################
 */
 #include <cmath>
-using namespace std;
 
 
-#ifndef __LanczosCpoly__
-#define __LanczosCpoly__
+#ifndef LANCZOS_C_POLY_
+#define LANCZOS_C_POLY_
 
 class LanczosCpoly
 {
@@ -374,7 +373,7 @@ double getPmNextToLastRoot()
     xb  = 1.0 - 1.5*PmPrimeRoot;
     fb  = evaluatePm(xb);
 
-    while(fabs(xa-xb) > tol)
+    while(std::abs(xa-xb) > tol)
     {
         diff = (fb-fa)/(xb-xa);
         xc   = xb - evaluatePm(xb)/diff;
@@ -403,7 +402,7 @@ double getPmPrimeFirstRoot()
     xb = (((4.49)*(4.49))/(4.0*(m)*(m+1)));
     fb = evaluatePmPrime(xb);
         
-    while(fabs(xa-xb) > tol)
+    while(std::abs(xa-xb) > tol)
     {
         diff = (fb-fa)/(xb-xa);
         xc   = xb - evaluatePmPrime(xb)/diff;
@@ -420,15 +419,15 @@ double evaluatePmPrime(double x)
     double t1,t2,t3,t4,t6,t9,t10,t11,t18,t25;
     double m = double(polyDegree);
     t1 = m+1.0;
-    t2 = sqrt(x);
-    t3 = asin(t2);
+    t2 = std::sqrt(x);
+    t3 = std::asin(t2);
     t4 = t1*t3;
     t6 = 1/t2;
-    t9 = sqrt(1.0-x);
+    t9 = std::sqrt(1.0-x);
     t10 = 1/t9;
-    t11 = sin(2.0*t3);
+    t11 = std::sin(2.0*t3);
     t18 = t11*t11;
-    t25 = cos(2.0*t4)*t6*t10/t11-sin(2.0*t4)/t1/t18*cos(2.0*t3)*t6*t10;
+    t25 = std::cos(2.0*t4)*t6*t10/t11-std::sin(2.0*t4)/t1/t18*std::cos(2.0*t3)*t6*t10;
     return t25;
 }
 double evaluateInversePm(double y)
@@ -446,7 +445,7 @@ double evaluateInversePm(double y)
     //
     if(y < 0.0) // Extend Pm^(-1) to be constant for neg. values.
     {
-        return sin(0.5*(3.14159265359/(m+1)))*sin(0.5*(3.14159265359/(m+1)));
+        return std::sin(0.5*(3.14159265359/(m+1)))*std::sin(0.5*(3.14159265359/(m+1)));
     }
 
     if(y <= 5.0)
@@ -457,7 +456,7 @@ double evaluateInversePm(double y)
     xb *= xb;
     fb = 0.0;
 
-    while(fabs(xa-xb) > tol)
+    while(std::abs(xa-xb) > tol)
     {
         diff = (fb-fa)/(xb-xa);
         xc   = xb - (evaluatePm(xb)-y)/diff;
@@ -477,7 +476,7 @@ double evaluateInversePm(double y)
         fa = 0.0;
         xb = -4.0/((m+1.0)*(m+1.0));
         fb = log(evaluatePm(xb));
-        while(fabs(xa-xb) > tol)
+        while(std::abs(xa-xb) > tol)
         {
         diff = (fb-fa)/(xb-xa);
         xc   = xb - (log(evaluatePm(xb))-log(y))/diff;
@@ -634,7 +633,7 @@ void getTwoSidedStarDegree(double spectralRadius, double lambdaStar, long polyDe
     // We need lambdaStar > 0 so always use absolute values
     //
 
-    lambdaStar = fabs(lambdaStar);
+    lambdaStar = std::abs(lambdaStar);
 
     // Using the procedure to determine xStar at the left edge
     // lambdaStarShift is the shift + the opposite of lambdaStar.

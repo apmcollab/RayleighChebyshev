@@ -1,5 +1,5 @@
-#ifndef _RC_Double2Darray_
-#define _RC_Double2Darray_
+#ifndef RC_DOUBLE_2D_ARRAY_
+#define RC_DOUBLE_2D_ARRAY_
 
 //
 // Class RC_Double2Darray is a container class for storing a 2D array

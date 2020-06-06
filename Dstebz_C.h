@@ -2,10 +2,9 @@
 #include <cfloat>
 #include <iostream>
 #include <cstdlib>
-using namespace std;
     
-#ifndef _Dstebz_C_
-#define _Dstebz_C_
+#ifndef DSTEBZ_RC_
+#define DSTEBZ_RC_
 //
 // Dstebz_C is a class that encapsulates the f2c translation of the LAPACK routine dstebz.f
 // and it's dependent routines.
@@ -577,7 +576,7 @@ return dstebz_(rangeArg,orderArg,n,vl, vu,il, iu,abstol, d__,e,m,nsplit,w, ibloc
     tmp1 = d__1 * d__1;
 /* Computing 2nd power */
     d__2 = ulp;
-    if ((d__1 = d__[j] * d__[j - 1], abs(d__1)) * (d__2 * d__2) + safemn 
+    if ((d__1 = d__[j] * d__[j - 1], std::abs(d__1)) * (d__2 * d__2) + safemn
         > tmp1) {
         isplit[*nsplit] = j - 1;
         ++(*nsplit);
@@ -625,7 +624,7 @@ return dstebz_(rangeArg,orderArg,n,vl, vu,il, iu,abstol, d__,e,m,nsplit,w, ibloc
     d__1 = gl, d__2 = d__[*n] - tmp1;
     gl = dstebz_min(d__1,d__2);
 /* Computing MAX */
-    d__1 = abs(gl), d__2 = abs(gu);
+    d__1 = std::abs(gl), d__2 = std::abs(gu);
     tnorm = dstebz_max(d__1,d__2);
     gl = gl - tnorm * 2.1 * ulp * *n - pivmin * 4.2000000000000002;
     gu = gu + tnorm * 2.1 * ulp * *n + pivmin * 2.1;
@@ -681,15 +680,15 @@ return dstebz_(rangeArg,orderArg,n,vl, vu,il, iu,abstol, d__,e,m,nsplit,w, ibloc
 /*        RANGE='A' or 'V' -- Set ATOLI */
 
 /* Computing MAX */
-    d__3 = abs(d__[1]) + abs(e[1]), d__4 = (d__1 = d__[*n], abs(d__1)) + (
-        d__2 = e[*n - 1], abs(d__2));
+    d__3 = std::abs(d__[1]) + std::abs(e[1]), d__4 = (d__1 = d__[*n], std::abs(d__1)) + (
+        d__2 = e[*n - 1], std::abs(d__2));
     tnorm = dstebz_max(d__3,d__4);
 
     i__1 = *n - 1;
     for (j = 2; j <= i__1; ++j) {
 /* Computing MAX */
-        d__4 = tnorm, d__5 = (d__1 = d__[j], abs(d__1)) + (d__2 = e[j - 1]
-            , abs(d__2)) + (d__3 = e[j], abs(d__3));
+        d__4 = tnorm, d__5 = (d__1 = d__[j], std::abs(d__1)) + (d__2 = e[j - 1]
+            , std::abs(d__2)) + (d__3 = e[j], std::abs(d__3));
         tnorm = dstebz_max(d__4,d__5);
 /* L30: */
     }
@@ -755,7 +754,7 @@ return dstebz_(rangeArg,orderArg,n,vl, vu,il, iu,abstol, d__,e,m,nsplit,w, ibloc
 
         i__2 = iend - 1;
         for (j = ibegin; j <= i__2; ++j) {
-        tmp2 = (d__1 = e[j], abs(d__1));
+        tmp2 = (d__1 = e[j], std::abs(d__1));
 /* Computing MAX */
         d__1 = gu, d__2 = d__[j] + tmp1 + tmp2;
         gu = dstebz_max(d__1,d__2);
@@ -773,7 +772,7 @@ return dstebz_(rangeArg,orderArg,n,vl, vu,il, iu,abstol, d__,e,m,nsplit,w, ibloc
         d__1 = gl, d__2 = d__[iend] - tmp1;
         gl = dstebz_min(d__1,d__2);
 /* Computing MAX */
-        d__1 = abs(gl), d__2 = abs(gu);
+        d__1 = std::abs(gl), d__2 = std::abs(gu);
         bnorm = dstebz_max(d__1,d__2);
         gl = gl - bnorm * 2.1 * ulp * in - pivmin * 2.1;
         gu = gu + bnorm * 2.1 * ulp * in + pivmin * 2.1;
@@ -782,7 +781,7 @@ return dstebz_(rangeArg,orderArg,n,vl, vu,il, iu,abstol, d__,e,m,nsplit,w, ibloc
 
         if (*abstol <= 0.) {
 /* Computing MAX */
-        d__1 = abs(gl), d__2 = abs(gu);
+        d__1 = std::abs(gl), d__2 = std::abs(gu);
         atoli = ulp * dstebz_max(d__1,d__2);
         } else {
         atoli = *abstol;
@@ -1157,7 +1156,7 @@ int dlaebz_(long *ijob, long *nitmax, long *n,
     for (ji = 1; ji <= i__1; ++ji) {
         for (jp = 1; jp <= 2; ++jp) {
         tmp1 = d__[1] - ab[ji + jp * ab_dim1];
-        if (abs(tmp1) < *pivmin) {
+        if (std::abs(tmp1) < *pivmin) {
             tmp1 = -(*pivmin);
         }
         nab[ji + jp * nab_dim1] = 0;
@@ -1168,7 +1167,7 @@ int dlaebz_(long *ijob, long *nitmax, long *n,
         i__2 = *n;
         for (j = 2; j <= i__2; ++j) {
             tmp1 = d__[j] - e2[j - 1] / tmp1 - ab[ji + jp * ab_dim1];
-            if (abs(tmp1) < *pivmin) {
+            if (std::abs(tmp1) < *pivmin) {
             tmp1 = -(*pivmin);
             }
             if (tmp1 <= 0.) {
@@ -1422,11 +1421,10 @@ int dlaebz_(long *ijob, long *nitmax, long *n,
     kfnew = kf;
     i__2 = kl;
     for (ji = kf; ji <= i__2; ++ji) {
-        tmp1 = (d__1 = ab[ji + (ab_dim1 << 1)] - ab[ji + ab_dim1], abs(
-            d__1));
+        tmp1 = (d__1 = ab[ji + (ab_dim1 << 1)] - ab[ji + ab_dim1], std::abs(d__1));
 /* Computing MAX */
-        d__3 = (d__1 = ab[ji + (ab_dim1 << 1)], abs(d__1)), d__4 = (d__2 =
-             ab[ji + ab_dim1], abs(d__2));
+        d__3 = (d__1 = ab[ji + (ab_dim1 << 1)], std::abs(d__1)), d__4 = (d__2 =
+             ab[ji + ab_dim1], std::abs(d__2));
         tmp2 = dstebz_max(d__3,d__4);
 /* Computing MAX */
         d__1 = dstebz_max(*abstol,*pivmin), d__2 = *reltol * tmp2;

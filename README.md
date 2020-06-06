@@ -18,7 +18,9 @@ OpenMP multi-thread usage is enabled by defining _OPENMP
 ### Prerequisites
 C++11
 ### Versioning
-Release : 19.12.16
+Release : 1.0.1
+### Date
+June, 6, 2020
 ### Authors
 Chris Anderson
 ### License
