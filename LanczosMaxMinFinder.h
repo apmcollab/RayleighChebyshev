@@ -530,7 +530,7 @@ std::vector<double>  getLargestSymTriEigValues(long nValues, std::vector<double>
 {
 	long i;
 
-	long N = Diag.size();
+	long N = (long)Diag.size();
 
     std::vector<double>  eVals(N);
 	std::vector<double>  eValsReturn(nValues);
@@ -587,7 +587,7 @@ std::vector<double>  getLowestSymTriEigValues(long nValues, std::vector<double> 
 {
 	long i;
 
-	long N = Diag.size();
+	long N = (long)Diag.size();
 
     std::vector<double>  eVals(N);
 	std::vector<double>  eValsReturn(nValues);

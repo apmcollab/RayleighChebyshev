@@ -337,7 +337,7 @@ public:
 //
 void orthogonalizeVarray(std::vector< Vtype >& vArray, Vtype& vTemp)
 {
-    long subspaceSize = vArray.size();
+    long subspaceSize = (long)vArray.size();
 	double rkk;
 	double rkj;
 

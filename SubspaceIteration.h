@@ -94,7 +94,7 @@ public:
     // Initialize subspace vectors using random vectors, or input
     // starting vectors if the latter is specified.
 
-    long inputSubspaceSize = eigVectors.size();
+    long inputSubspaceSize = (long)eigVectors.size();
 
     if((not nonRandomStartFlag)||(inputSubspaceSize == 0))
     {
@@ -250,7 +250,7 @@ public:
 //
 void orthogonalizeVarray(std::vector< Vtype >& vArray)
 {
-    long subspaceSize = vArray.size();
+    long subspaceSize = (long)vArray.size();
 	double rkk;
 	double rkj;
 
