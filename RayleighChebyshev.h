@@ -699,7 +699,7 @@ protected:
     			vArray[k].initialize(eigVectors[k]);
     			vArrayTmp[k].initialize(vStart);
     		}
-    		for(k = eigVectors.size(); k < subspaceSize; k++)
+    		for(k = (long)eigVectors.size(); k < subspaceSize; k++)
     		{
     		vArray[k].initialize(vStart);
     		randOp.randomize(vArray[k]);
@@ -727,7 +727,7 @@ protected:
     indexA_start = 0;
     indexA_end   = subspaceSize-1;
     indexB_start = 0;
-    indexB_end   = orthogSubspacePtr->size() -1;
+    indexB_end   = (long)orthogSubspacePtr->size() -1;
 
     OrthogonalizeAtoB(vArray, indexA_start,indexA_end, *orthogSubspacePtr, indexB_start, indexB_end);
     }
@@ -965,7 +965,7 @@ protected:
     indexA_start = 0;
     indexA_end   = subspaceSize-1;
     indexB_start = 0;
-    indexB_end   = orthogSubspacePtr->size() -1;
+    indexB_end   = (long)orthogSubspacePtr->size() -1;
 
     OrthogonalizeAtoB(vArray, indexA_start,indexA_end, *orthogSubspacePtr, indexB_start, indexB_end);
     }
@@ -1561,13 +1561,13 @@ protected:
 
     void expandArray(std::vector<double>& v, long expandSize)
     {
-    long origSize = v.size();
+    long origSize = (long)v.size();
     v.resize(origSize+expandSize,0.0);
     }
 
     void expandVector(std::vector< Vtype >& v, long expandSize)
     {
-    long origSize = v.size();
+    long origSize = (long)v.size();
     v.resize(origSize+expandSize);
     }
 
