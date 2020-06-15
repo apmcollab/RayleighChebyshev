@@ -2,6 +2,9 @@
 #include <cfloat>
 #include <iostream>
 #include <cstdlib>
+#include <sstream>
+#include <exception>
+#include <stdexcept>
     
 #ifndef DSTEBZ_RC_
 #define DSTEBZ_RC_
@@ -986,9 +989,13 @@ L70:
 
 int xerbla_(const char* A, long* I2, int)
 {
-    cerr << "** On entry to " <<  A << " parameter number " <<  I2 <<  " had an illegal value" << endl;
-    cerr << "XXX Program Terminated XXX" << endl;
-    exit(1);
+	std::stringstream errorStream;
+	errorStream << "** On entry to " <<  A << " parameter number " <<  I2 <<  " had an illegal value \n";
+	throw std::invalid_argument(errorStream.str());
+    return 1;
+
+    //std::cerr << "** On entry to " <<  A << " parameter number " <<  I2 <<  " had an illegal value" << std::endl;
+    //std::cerr << "XXX Program Terminated XXX" << endl;
     return 1;
 }
 
