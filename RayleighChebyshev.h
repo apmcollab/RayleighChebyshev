@@ -260,26 +260,26 @@ class RayleighChebyshev
     void clearFixedIteratonCount()
     {fixedIterationCount  = -1;}
 
-    void setNonRandomStartFlag()
-    {nonRandomStartFlag  = true;}
+    void setNonRandomStartFlag(bool val = true)
+    {nonRandomStartFlag  = val;}
 
     void clearNonRandomStartFlag()
     {nonRandomStartFlag  = false;}
 
-    void setVerboseFlag()
-    {verboseFlag = true;}
+    void setVerboseFlag(bool val = true)
+    {verboseFlag = val;}
 
     void clearVerboseFlag()
     {verboseFlag = false;}
 
-    void setVerboseSubspaceFlag()
-    {verboseSubspaceFlag = true;}
+    void setVerboseSubspaceFlag(bool val = true)
+    {verboseSubspaceFlag = val;}
 
     void clearVerboseSubspaceFlag()
     {verboseSubspaceFlag = false;}
 
-    void setEigDiagnosticsFlag()
-    {eigDiagnosticsFlag = 1;}
+    void setEigDiagnosticsFlag(bool val = true)
+    {eigDiagnosticsFlag = val;}
 
     void clearEigDiagnosticsFlag()
     {eigDiagnosticsFlag = 0;}
@@ -299,9 +299,9 @@ class RayleighChebyshev
     double getGuardEigenvalue()
     {return guardValue;}
 
-    void setIntervalStopCondition()
+    void setIntervalStopCondition(bool val = true)
     {
-    intervalStopConditionFlag = true;
+    intervalStopConditionFlag = val;
     }
 
     void clearIntervalStopCondition()
