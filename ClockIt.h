@@ -1,17 +1,21 @@
-#ifndef _ClockIt_
-#define _ClockIt_
+#ifndef Clock_IT_
+#define Clock_IT_
 //
 // This version of Class ClockIt can be used on either a Linux/Unix or MS system 
 // to time portions of code. 
 //
-// The class depends upon calls to the gettimeofday(..) (Linux: in <sys/time.h> ) or the
+// The class depends upon calls to the gettimeofday(..) (Linux: in <sys    ime.h> ) or the
 // QueryPerformanceCounter (MS : in <Windows.h>) functions. 
 //
-// Author: Chris Anderson. Version date: Mon 16 Feb 2015 09:03:58 AM PST   
+// Author: Chris Anderson. Version date: Mon 16 Feb 2015 09:03:58 AM PST 
+//
+// Updates: 
+// 03/15/2020  : Updated constructor to inialize LARGE_INTEGER variables in MS version (CRA)
 // 
 // Usage Snippet:
 
 /*
+#include "Timing/ClockIt.h"
 int main()
 {
 
@@ -23,14 +27,15 @@ clock1.start();              // start the instance (reads the clock)
 
 clock1.stop();               // stop the clock (reads the clock again)
 
-cout << "Time elapsed in Milli-seconds" << clock1.getMilliSecElapsedTime() << endl;
+cout << "Time elapsed in Milli-seconds: " << clock1.getMilliSecElapsedTime() << endl;
 
 }
 */
+
 /*
 #############################################################################
 #
-# Copyright 2015 Chris Anderson
+# Copyright  2015-2020 Chris Anderson
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the Lesser GNU General Public License as published by
@@ -51,7 +56,7 @@ cout << "Time elapsed in Milli-seconds" << clock1.getMilliSecElapsedTime() << en
 #ifndef _MSC_VER
 //
 // This version of Class ClockIt can be used on a Linux/Unix system to time portions of code. It
-// depends upon calls to the gettimeofday(..) function in sys/time.h to read the system
+// depends upon calls to the gettimeofday(..) function in sys    ime.h to read the system
 // clock.
 //
 #include <sys/time.h>
@@ -62,7 +67,7 @@ public:
 
     ClockIt()
     {
-    elapsedTime = 0;
+    elapsedTime = 0; 
     }
 
     ClockIt(const ClockIt& clock)
@@ -120,68 +125,77 @@ class ClockIt
 {
 public:
 
-	ClockIt()
-	{
-		elapsedTime = 0;
-	}
+    ClockIt()
+    {
+        elapsedTime         = 0;
+        StartingTime        = { 0,0 };
+        EndingTime          = { 0,0 };
+        ElapsedMicroseconds = { 0,0 };
+        Frequency           = { 0,0 };
+    }
 
-	ClockIt(const ClockIt& clock)
-	{
-		elapsedTime = clock.elapsedTime;
-		t1 = clock.t1;
-		t2 = clock.t2;
-	}
+    ClockIt(const ClockIt& clockIt)
+    {
+        elapsedTime = clockIt.elapsedTime;
+        t1 = clockIt.t1;
+        t2 = clockIt.t2;
 
-	//
-	// Reads the clock 
-	//
+        StartingTime        = clockIt.StartingTime;
+        EndingTime          = clockIt.EndingTime;
+        ElapsedMicroseconds = clockIt.ElapsedMicroseconds;
+        Frequency           = clockIt.Frequency;
+    }
 
-	inline void start()
-	{
-		QueryPerformanceFrequency(&Frequency);
-		QueryPerformanceCounter(&StartingTime);
-	}
+    //
+    // Reads the clock 
+    //
 
-	//
-	// Reads the clock again, and computes the 
-	// the elapsed time. 
-	//
-	// Returns the time in milliseconds since start() called
-	//
+    inline void start()
+    {
+        QueryPerformanceFrequency(&Frequency);
+        QueryPerformanceCounter(&StartingTime);
+    }
 
-	inline double stop()
-	{
-		QueryPerformanceCounter(&EndingTime);
-		ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
-		//
-		// Compute elapsed time in milliseconds
-		//
-		ElapsedMicroseconds.QuadPart *= 1000000;
-		ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;
-		elapsedTime = (double)(ElapsedMicroseconds.QuadPart)/1000.0;
-		return elapsedTime;
-	}
+    //
+    // Reads the clock again, and computes the 
+    // the elapsed time. 
+    //
+    // Returns the time in milliseconds since start() called
+    //
 
-	double getMilliSecElapsedTime()
-	{
-		return elapsedTime;
-	}
+    inline double stop()
+    {
+        QueryPerformanceCounter(&EndingTime);
+        ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
+        //
+        // Compute elapsed time in milliseconds
+        //
+        ElapsedMicroseconds.QuadPart *= 1000000;
+        ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;
+        elapsedTime = (double)(ElapsedMicroseconds.QuadPart)/1000.0;
+        return elapsedTime;
+    }
 
-	double getMicroSecElapsedTime()
-	{
-		return elapsedTime*1000.0;
-	}
+    double getMilliSecElapsedTime()
+    {
+        return elapsedTime;
+    }
 
-	double getSecElapsedTime()
-	{
-		return elapsedTime / 1000.0;
-	}
+    double getMicroSecElapsedTime()
+    {
+        return elapsedTime*1000.0;
+    }
 
-	timeval t1, t2;
-	double elapsedTime;
+    double getSecElapsedTime()
+    {
+        return elapsedTime / 1000.0;
+    }
 
-	LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
-	LARGE_INTEGER Frequency;
+    timeval t1, t2;
+    double elapsedTime;
+
+    LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
+    LARGE_INTEGER Frequency;
 };
 
 #endif
