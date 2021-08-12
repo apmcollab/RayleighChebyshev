@@ -38,7 +38,7 @@
    operator -=                        (incremental subtraction)
    operator *=(double alpha)          (scalar multiplication)
 
-   if _VBLAS_ is defined, then the Vtype class must also possess member functions
+   if VBLAS_ is defined, then the Vtype class must also possess member functions
 
    void   scal(double alpha)                                (scalar multiplication)
    void   axpy(double alpha,const Vtype& x)                 (this = this + alpah*x)
@@ -160,7 +160,7 @@ void setRepetitionFactor(long repetitionFactor)
 // The apply(Vtype& v) operator of this class applies the operator
 // Pm(A') to the input vector v. 
 //
-#ifndef _VBLAS_
+#ifndef VBLAS_
 void apply(Vtype& v)
 {
     long repCount;
@@ -223,7 +223,7 @@ void apply(Vtype& v)
      }
 }
 #endif
-#ifdef _VBLAS_
+#ifdef VBLAS_
 
 void apply(Vtype& v)
 {

@@ -40,7 +40,7 @@
    double dot(const Vtype&)           (dot product)
    long getDimension() const          (returns dimension of vectors)
 
-   if _VBLAS_ is defined, then the Vtype class must also possess member functions
+   if VBLAS_ is defined, then the Vtype class must also possess member functions
 
    double nrm2()                                            (2-norm based on std::vector dot product)
    void   scal(double alpha)                                (scalar multiplication)
@@ -169,7 +169,7 @@
 #include "RC_Double2Darray.h"
 #include "JacobiDiagonalizer.h"
 
-#ifdef _TIMING_
+#ifdef TIMING_
 #include "ClockIt.h"
 #endif
 
@@ -596,7 +596,7 @@ protected:
 
     long returnFlag = 0;
 
-#ifdef _TIMING_
+#ifdef TIMING_
     ClockIt     timer;
 #endif
     //
@@ -771,7 +771,7 @@ protected:
     long foundCount;
     long guardStopValue;
 
-#ifdef _TIMING_
+#ifdef TIMING_
     double orthoTime   = 0.0;
     long   orthoCount  = 0;
 
@@ -796,7 +796,7 @@ protected:
 
     while(exitFlag == 0)
     {
-#ifdef _TIMING_
+#ifdef TIMING_
     orthoTime   = 0.0;
     orthoCount  = 0;
     applyTime   = 0.0;
@@ -824,7 +824,7 @@ protected:
         randOp.randomize(vArray[k]);
     }}
 
-#ifdef _TIMING_
+#ifdef TIMING_
     timer.start();
 #endif
 
@@ -841,7 +841,7 @@ protected:
 
     orthogonalizeVarray(subspaceSize);
 
-#ifdef _TIMING_
+#ifdef TIMING_
     timer.stop();
     orthoTime  += timer.getSecElapsedTime();
     orthoCount += 1;
@@ -936,7 +936,7 @@ protected:
     cOp.initialize(starDegree,minIntervalRepetitionCount,starBound,shift,oP);
 #endif
 
-#ifdef _TIMING_
+#ifdef TIMING_
     timer.start();
 #endif 
 
@@ -958,12 +958,12 @@ protected:
 
     applyCount += 1;
 
-#ifdef _TIMING_
+#ifdef TIMING_
     timer.stop();
     applyTime  += timer.getSecElapsedTime();
 #endif 
 
-#ifdef _TIMING_
+#ifdef TIMING_
     timer.start();
 #endif 
 
@@ -998,14 +998,14 @@ protected:
 //#############################################################################
 //#############################################################################
 //
-#ifdef _TIMING_
+#ifdef TIMING_
     timer.stop();
     orthoTime  += timer.getSecElapsedTime();
     orthoCount += 1;
 #endif 
 
 
-#ifdef _TIMING_
+#ifdef TIMING_
     timer.start();
 #endif 
 
@@ -1090,7 +1090,7 @@ schedule(static,1)
     printf("XXXXXXXXXXXXXXXXXXXXXXX \n");
     }
  
-#ifdef _TIMING_
+#ifdef TIMING_
     timer.stop();
     eigTime  += timer.getSecElapsedTime();
     eigCount += 1;
@@ -1198,7 +1198,7 @@ schedule(static,1)
 // from the current subspace
 //
 
-#ifndef _VBLAS_
+#ifndef VBLAS_
 
 #ifdef _OPENMP
     #pragma omp parallel for \
@@ -1238,7 +1238,7 @@ schedule(static,1)
 #endif
 #endif
 
-#ifdef _VBLAS_
+#ifdef VBLAS_
 
 
 #ifdef _OPENMP
@@ -1394,7 +1394,7 @@ schedule(static,1)
     applyCountCumulative  += applyCount;
     }
 
-#ifdef _TIMING_
+#ifdef TIMING_
     orthoTimeCumulative   += orthoTime;
     applyTimeCumulative   += applyTime;
     eigTimeCumulative     += eigTime;
@@ -1404,7 +1404,7 @@ schedule(static,1)
 #endif
 
 
-#ifdef _TIMING_
+#ifdef TIMING_
     if(eigDiagnosticsFlag == 1)
     {
         printf("OrthoTime_Sec : %10.5f \n",orthoTime);
@@ -1455,7 +1455,7 @@ schedule(static,1)
     VtAVeigValueDataPtr   = &VtAVeigValue[0];
     VtAVeigVectorDataPtr  = VtAVeigVector.getDataPointer();
 
-    #ifdef _TIMING_
+    #ifdef TIMING_
     timer.start();
 #endif
 
@@ -1503,7 +1503,7 @@ schedule(static,1)
     // Create eigenvectors
     //
 
-#ifndef _VBLAS_
+#ifndef VBLAS_
 
 #ifdef _OPENMP
     #pragma omp parallel for \
@@ -1547,7 +1547,7 @@ schedule(static,1)
 #endif
 #endif
 
-#ifdef _VBLAS_
+#ifdef VBLAS_
 #ifdef _OPENMP
 		#pragma omp parallel for \
 		private(rkk) \
@@ -1573,7 +1573,7 @@ schedule(static,1)
         eigValues[i]  = VtAVeigValue[foundSize - i - 1];
         }
 
-#ifdef _TIMING_
+#ifdef TIMING_
     timer.stop();
     eigTimeCumulative  += timer.getSecElapsedTime();
 #endif
@@ -1605,7 +1605,7 @@ schedule(static,1)
     }
     
 
-#ifdef _TIMING_
+#ifdef TIMING_
     if(eigDiagnosticsFlag == 1)
     {
     printf("Cumulative_OrthoTime_Sec  : %10.5f \n",orthoTimeCumulative);
@@ -1656,7 +1656,7 @@ schedule(static,1)
     double rkk;
      int threadNum;
 
-#ifndef _VBLAS_
+#ifndef VBLAS_
 
 #ifdef _OPENMP
     for(long j = indexB_start; j <= indexB_end ; j++)
@@ -1703,7 +1703,7 @@ schedule(static,1)
 #endif
 
 
-#ifdef _VBLAS_
+#ifdef VBLAS_
 for(long j = indexB_start; j <= indexB_end; j++)
 {
 #ifdef _OPENMP
@@ -1739,7 +1739,7 @@ void orthogonalizeVarray(long subspaceSize)
 	double rkk;
 	double rkj;
 
-#ifndef _VBLAS_
+#ifndef VBLAS_
 
 #ifdef _OPENMP
     int threadNum;
@@ -1778,7 +1778,7 @@ void orthogonalizeVarray(long subspaceSize)
 #endif
 #endif
 
-#ifdef _VBLAS_
+#ifdef VBLAS_
 //  Orthogonalize the subspace vectors using modified Gram-Schmidt
 
     for(long k = 1; k <= subspaceSize; k++)

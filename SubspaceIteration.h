@@ -191,7 +191,7 @@ public:
 
 	long     k;
 	double rkk;
-#ifndef _VBLAS_
+#ifndef VBLAS_
     //
     // Create eigenvectors from the current subspace
     //
@@ -210,7 +210,7 @@ public:
         vArrayTmp[k] *= 1.0/rkk;
     }
 #endif
-#ifdef _VBLAS_
+#ifdef VBLAS_
 
 #ifdef _OPEN_MP_
 		#pragma omp parallel for \
@@ -254,7 +254,7 @@ void orthogonalizeVarray(std::vector< Vtype >& vArray)
 	double rkk;
 	double rkj;
 
-#ifndef _VBLAS_
+#ifndef VBLAS_
 //  Orthogonalize the subspace vectors using Modified Gram-Schmidt
 
     for(long k = 1; k <= subspaceSize; k++)
@@ -270,7 +270,7 @@ void orthogonalizeVarray(std::vector< Vtype >& vArray)
         }
     }
 #endif
-#ifdef _VBLAS_
+#ifdef VBLAS_
 
     long j;
 

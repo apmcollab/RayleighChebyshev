@@ -341,7 +341,7 @@ void orthogonalizeVarray(std::vector< Vtype >& vArray, Vtype& vTemp)
 	double rkk;
 	double rkj;
 
-#ifndef _VBLAS_
+#ifndef VBLAS_
 //  Orthogonalize the subspace vectors using Modified Gram-Schmidt
 
     for(long k = 1; k <= subspaceSize; k++)
@@ -357,7 +357,7 @@ void orthogonalizeVarray(std::vector< Vtype >& vArray, Vtype& vTemp)
         }
     }
 #endif
-#ifdef _VBLAS_
+#ifdef VBLAS_
 
     long j;
 
