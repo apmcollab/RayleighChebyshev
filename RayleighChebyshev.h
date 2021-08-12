@@ -319,6 +319,16 @@ class RayleighChebyshev
     hardIntervalStopFlag = false;
     }
 
+    void setMaxSpectralBoundsIter(long iterCount)
+    {
+    	lanczosMaxMinFinder.setIterationMax(iterCount);
+    }
+
+    long getSpectralBoundsIterCount()
+    {
+    	return lanczosMaxMinFinder.getIterationCount();
+    }
+
     void getMinEigAndMaxEig(double iterationTol,Vtype& vStart,Otype& oP, 
     VRandomizeOpType& randOp, double&  minEigValue, 
     double& maxEigValue)

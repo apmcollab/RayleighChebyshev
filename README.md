@@ -14,13 +14,12 @@ a vector<Vtype> class instance.
 OpenMP multi-thread usage is enabled by defining _OPENMP
 
 
-
 ### Prerequisites
 C++11
 ### Versioning
-Release : 1.0.2
+Release : 1.0.3
 ### Date
-June, 15, 2020
+August, 12, 2021
 ### Authors
 Chris Anderson
 ### License

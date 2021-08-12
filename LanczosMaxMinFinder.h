@@ -81,12 +81,13 @@
 #endif
 
 #ifndef  LANCZOS_MAX_MIN_FINDER_ITERATION_MAX
-#define  LANCZOS_MAX_MIN_FINDER_ITERATION_MAX  1000
+#define  LANCZOS_MAX_MIN_FINDER_ITERATION_MAX  10000
 #endif
 
 #include <iostream>
 #include <cmath>
 #include <cstdio>
+#include <stdexcept>
 #include "Dstebz_C.h"
 
 /*
@@ -117,7 +118,7 @@ LanczosMaxMinFinder(long maxIterCount)
 
 void initialize()
 {
-    this->iterationMaximumCount      =   LANCZOS_MAX_MIN_FINDER_ITERATION_MAX;
+    this->iterationMaximumCount      = LANCZOS_MAX_MIN_FINDER_ITERATION_MAX;
     this->verboseFlag                = 0;
     this->exactDiagnosticFlag        = 0;
     this->maxExact                   = 0.0;
@@ -194,6 +195,11 @@ void setDiagnosticExactValues(double exactMin,double exactMax)
     this->minExact             = exactMin;
     exactDiagnosticFlag        = 1;
 	setVerboseFlag();
+}
+
+long getIterationCount()
+{
+	return this->iterCount;
 }
 
 //
@@ -449,7 +455,13 @@ VRandomizeOpType& randOp, double& minEigValue, double& maxEigValue)
 	    }
 
         }
+
+
 }
+//
+//  Capture Lanczos iterations required
+//
+    this->iterCount = k;
 //
 //  Insure max and min eigenvalue are ordered properly
 //
@@ -639,6 +651,7 @@ std::vector<double>  getLowestSymTriEigValues(long nValues, std::vector<double> 
 
 	return eValsReturn;
 }
+
 
 };
 
