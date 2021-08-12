@@ -614,11 +614,13 @@ protected:
     std::vector<double>     oldEigs;
     std::vector<double>    eigDiffs;
     std::vector<double> oldEigDiffs;
-    double             eigDiff;
+    double                 eigDiff;
 
     lambdaStar        = maxEigValue;
     subspaceSize      = subspaceIncrementSize +  bufferSize;
     foundSize         = 0;
+
+    int threadNum;
 
     //
     // Reset subspace sizes (if necessary) to make sure 
@@ -654,6 +656,7 @@ protected:
     // been found
     //
 
+
     vArray.resize(subspaceSize);
     vArrayTmp.resize(subspaceSize);
 
@@ -664,8 +667,6 @@ protected:
     double* VtAVdataPtr;
     double* VtAVeigValueDataPtr;
     double* VtAVeigVectorDataPtr;
-
-    long i; long j; long k;
 
     double rkk; 
     double rkj;
@@ -693,7 +694,7 @@ protected:
 
     if(not nonRandomStartFlag)
     {
-    	for(k = 0; k < subspaceSize; k++)
+    	for(long k = 0; k < subspaceSize; k++)
     	{
     		vArray[k].initialize(vStart);
     		randOp.randomize(vArray[k]);
@@ -704,12 +705,12 @@ protected:
     {
     	if(subspaceSize > (long)eigVectors.size())
     	{
-    		for(k = 0; k < (long)eigVectors.size(); k++)
+    		for(long k = 0; k < (long)eigVectors.size(); k++)
     		{
     			vArray[k].initialize(eigVectors[k]);
     			vArrayTmp[k].initialize(vStart);
     		}
-    		for(k = (long)eigVectors.size(); k < subspaceSize; k++)
+    		for(long k = (long)eigVectors.size(); k < subspaceSize; k++)
     		{
     		vArray[k].initialize(vStart);
     		randOp.randomize(vArray[k]);
@@ -718,7 +719,7 @@ protected:
     	}
     	else
     	{
-    		for(k = 0; k <  subspaceSize; k++)
+    		for(long k = 0; k <  subspaceSize; k++)
     		{
     			vArray[k].initialize(eigVectors[k]);
     			vArrayTmp[k].initialize(vStart);
@@ -729,6 +730,18 @@ protected:
 
     	eigVectors.clear();
     }
+
+    // Initialize temporaries
+
+    vTemp.initialize(vStart);
+
+    #ifdef _OPENMP
+    vArrayOMP.resize(omp_get_max_threads());
+    for(long k = 0; k < omp_get_max_threads(); k++)
+    {
+    	vArrayOMP[k].initialize(vStart);
+    }
+    #endif
 
 //  Orthogonalize working subspace (vArray) to orthogSubspace if it's been specified
 
@@ -742,7 +755,6 @@ protected:
     OrthogonalizeAtoB(vArray, indexA_start,indexA_end, *orthogSubspacePtr, indexB_start, indexB_end);
     }
 
-    vTemp.initialize(vStart);
     
 #ifdef _OPENMP
     cOpThreadArray < Vtype, Otype > cOpArray(oP);
@@ -797,7 +809,7 @@ protected:
 //  This step is done for cases when the routine
 //  is called to continue an existing computation.
 //
-    for(k = bufferSize; k < subspaceSize; k++)
+    for(long k = bufferSize; k < subspaceSize; k++)
     {
          oldEigs[k] = oldEigs[bufferSize];
     }
@@ -807,7 +819,7 @@ protected:
 //
     if((applyCountCumulative > 0)||(not nonRandomStartFlag))
     {
-    for(k = bufferSize; k < subspaceSize; k++)
+    for(long k = bufferSize; k < subspaceSize; k++)
     {
         randOp.randomize(vArray[k]);
     }}
@@ -931,15 +943,14 @@ protected:
 
 #ifdef _OPENMP
 	#pragma omp parallel for \
-	private(k) \
 	firstprivate(cOpArray) \
 	schedule(static,1)
-    for(k = 0; k < subspaceSize; k++)
+    for(long k = 0; k < subspaceSize; k++)
     {
     cOpArray.apply(vArray[k]);
     }
 #else
-    for(k = 0; k < subspaceSize; k++)
+    for(long k = 0; k < subspaceSize; k++)
     {
     cOp.apply(vArray[k]);
     }
@@ -980,43 +991,9 @@ protected:
     OrthogonalizeAtoB(vArray, indexA_start,indexA_end, *orthogSubspacePtr, indexB_start, indexB_end);
     }
 
-
-#ifndef _VBLAS_
-
 //  Orthogonalize the subspace vectors using Modified Gram-Schmidt
 
-    for(k = 1; k <= subspaceSize; k++)
-    {
-        rkk     = std::sqrt(vArray[k-1].dot(vArray[k-1]));
-        vArray[k-1] *= 1.0/rkk;
-        for(j = k+1; j <= subspaceSize; j++)
-        {
-            rkj           =   vArray[k-1].dot(vArray[j-1]);
-            vTemp         =   vArray[k-1];
-            vTemp        *=  -rkj;
-            vArray[j-1]  += vTemp;
-        }
-    }
-#endif
-#ifdef _VBLAS_
-//  Orthogonalize the subspace vectors using   Modified Gram-Schmidt
-
-    for(k = 1; k <= subspaceSize; k++)
-    {
-        rkk     = vArray[k-1].nrm2(); 
-        vArray[k-1].scal(1.0/rkk);
-#ifdef _OPENMP
-		#pragma omp parallel for \
-		private(j,rkj) \
-		schedule(static,1)
-#endif
-        for(j = k+1; j <= subspaceSize; j++)
-        {
-            rkj  =   vArray[j-1].dot(vArray[k-1]);
-            vArray[j-1].axpy(-rkj,vArray[k-1]);
-        }
-    }
-#endif
+    orthogonalizeVarray(subspaceSize);
 //
 //#############################################################################
 //#############################################################################
@@ -1031,24 +1008,43 @@ protected:
 #ifdef _TIMING_
     timer.start();
 #endif 
-//
+
 //  Form Vt*A*V 
-//
-    for(i = 0; i < subspaceSize; i++)
+
+#ifdef _OPENMP
+#pragma omp parallel for \
+private(threadNum) \
+schedule(static,1)
+    for(long i = 0; i < subspaceSize; i++)
+    {
+    	threadNum = omp_get_thread_num();
+        vArrayOMP[threadNum] = vArray[i];
+        cOpArray.OpArray[threadNum]->apply(vArrayOMP[threadNum]);
+        for(long j = i; j < subspaceSize; j++)
+        {
+        VtAV(j,i) = vArray[j].dot(vArrayOMP[threadNum]);
+        }
+    }
+    for(long i = 0; i < subspaceSize; i++)
+    {
+    	for(long j = i+1; j < subspaceSize; j++)
+    	{
+    	     VtAV(i,j) = VtAV(j,i);
+    	}
+    }
+#else
+    for(long i = 0; i < subspaceSize; i++)
     {
         vTemp     = vArray[i];
         oP.apply(vTemp);
-#ifdef _OPENMP
-		#pragma omp parallel for \
-		private(j) \
-		schedule(static,1)
-#endif
-        for(j = i; j < subspaceSize; j++)
+        for(long j = i; j < subspaceSize; j++)
         {
         VtAV(j,i) = vArray[j].dot(vTemp);
         VtAV(i,j) = VtAV(j,i);
         }
     }
+#endif
+
 
     /*
     cout << "Matrix " << endl;
@@ -1084,7 +1080,7 @@ protected:
     if(verboseSubspaceFlag)
     {
     printf("XXXX Subspace Eigs XXXX \n");
-    for(i = 0; i < subspaceSize; i++)
+    for(long i = 0; i < subspaceSize; i++)
     {
     printf("%3ld : %+10.5e \n",i,VtAVeigValue[subspaceSize - i - 1 ]);
     }
@@ -1118,12 +1114,12 @@ protected:
     } 
 
 
-    for(i = 0; i < subspaceIncrementSize + guardStopValue; i++)
+    for(long i = 0; i < subspaceIncrementSize + guardStopValue; i++)
     {
     	oldEigDiffs[i] = eigDiffs[i];
     }
     
-    for(i = 0; i < subspaceIncrementSize + guardStopValue; i++)
+    for(long i = 0; i < subspaceIncrementSize + guardStopValue; i++)
     {
     eigDiff = std::abs(VtAVeigValue[subspaceSize - i - 1] - oldEigs[subspaceSize - i - 1]);
 
@@ -1136,7 +1132,7 @@ protected:
     }
 
 
-    for(i = 0; i < subspaceSize; i++)
+    for(long i = 0; i < subspaceSize; i++)
     {
     oldEigs[i] =VtAVeigValue[i];
     }
@@ -1149,7 +1145,7 @@ protected:
     eigDiffRatio  = 0.0;
     if(maxEigDiff > subspaceTol)
     {
-    	for(i = 0; i < subspaceIncrementSize+1; i++)
+    	for(long i = 0; i < subspaceIncrementSize+1; i++)
     	{
           if(std::abs(oldEigDiffs[i]) > subspaceTol/10.0)
           {
@@ -1197,16 +1193,39 @@ protected:
     }
 
 
+//
+// We have subspace convergence so we now create eigenvectors
+// from the current subspace
+//
+
 #ifndef _VBLAS_
-    //
-    // We have subspace convergence so we now create eigenvectors
-    // from the current subspace
-    //
-    for(k = 0; k < subspaceSize; k++)
+
+#ifdef _OPENMP
+    #pragma omp parallel for \
+	private(rkk,threadNum) \
+	schedule(static,1)
+    for(long k = 0; k < subspaceSize; k++)
+    {
+    	threadNum = omp_get_thread_num();
+        vArrayTmp[k]  = vArray[0];
+        vArrayTmp[k] *= VtAVeigVector(0,k);
+        for(long i = 1; i < subspaceSize; i++)
+        {
+        vArrayOMP[threadNum] =  vArray[i];
+        vArrayOMP[threadNum] *= VtAVeigVector(i,k);
+        vArrayTmp[k] += vArrayOMP[threadNum];
+        }
+
+        rkk = vArrayTmp[k].dot(vArrayTmp[k]);
+        vArrayTmp[k] *= 1.0/rkk;
+    }
+#else
+
+    for(long k = 0; k < subspaceSize; k++)
     {
         vArrayTmp[k]  = vArray[0];
         vArrayTmp[k] *= VtAVeigVector(0,k);
-        for(i = 1; i < subspaceSize; i++)
+        for(long i = 1; i < subspaceSize; i++)
         {
         vTemp =  vArray[i];
         vTemp *= VtAVeigVector(i,k);
@@ -1217,24 +1236,22 @@ protected:
         vArrayTmp[k] *= 1.0/rkk;
     }
 #endif
+#endif
+
 #ifdef _VBLAS_
 
-   //
-    // We have subspace convergence so we now create eigenvectors
-    // from the current subspace
-    //
+
 #ifdef _OPENMP
 		#pragma omp parallel for \
-		private(i,k,rkk) \
+		private(rkk) \
 		schedule(static,1)
 #endif
-    for(k = 0; k < subspaceSize; k++)
+    for(long k = 0; k < subspaceSize; k++)
     {
         vArrayTmp[k] = vArray[0];
         vArrayTmp[k].scal(VtAVeigVector(0,k));
 
-
-        for(i = 1; i < subspaceSize; i++)
+        for(long i = 1; i < subspaceSize; i++)
         {
         vArrayTmp[k].axpy(VtAVeigVector(i,k),vArray[i]);
         }
@@ -1255,7 +1272,7 @@ protected:
     else 
     {checkIndexCount = subspaceSize;}
 
-    for(i = 0; i < checkIndexCount; i++) 
+    for(long i = 0; i < checkIndexCount; i++)
     {
     vtvEig     = VtAVeigValue[subspaceSize - i - 1];
     relErrFactor = getRelErrorFactor(lambdaMax,subspaceTol);
@@ -1281,7 +1298,7 @@ protected:
         expandVector(eigVectors,foundCount);
         expandArray (eigValues, foundCount);
 
-        for(i = 0; i < foundCount; i++) 
+        for(long i = 0; i < foundCount; i++)
         {
         eigVectors[foundSize + i] = vArrayTmp[subspaceSize - i - 1];
         eigValues[foundSize + i]  = VtAVeigValue[subspaceSize - i - 1];
@@ -1369,7 +1386,7 @@ protected:
     }
 
 
-    for(k = 0; k < bufferSize; k++)
+    for(long k = 0; k < bufferSize; k++)
     {
         vArray[k] = vArrayTmp[k];
     }
@@ -1444,34 +1461,80 @@ protected:
 
 //  Form Ut*A*U
 
-    for(i = 0; i < foundSize; i++)
+#ifdef _OPENMP
+#pragma omp parallel for \
+private(threadNum) \
+schedule(static,1)
+    for(long i = 0; i < foundSize; i++)
+    {
+    	threadNum = omp_get_thread_num();
+        vArrayOMP[threadNum] = eigVectors[i];
+        cOpArray.OpArray[threadNum]->apply(vArrayOMP[threadNum]);
+        for(long j = i; j < foundSize; j++)
+        {
+        VtAV(j,i) = eigVectors[j].dot(vArrayOMP[threadNum]);
+        }
+    }
+
+    for(long i = 0; i < foundSize; i++)
+    {
+    	for(long j = i+1; j < foundSize; j++)
+    	{
+    	     VtAV(i,j) = VtAV(j,i);
+    	}
+    }
+#else
+    for(long i = 0; i < foundSize; i++)
     {
         vTemp     = eigVectors[i];
         oP.apply(vTemp);
-#ifdef _OPENMP
-		#pragma omp parallel for \
-		private(j) \
-		schedule(static,1)
-#endif
-        for(j = i; j < foundSize; j++)
+        for(long j = i; j < foundSize; j++)
         {
         VtAV(j,i) = eigVectors[j].dot(vTemp);
         VtAV(i,j) = VtAV(j,i);
         }
     }
+#endif
 
     jacobiMethod.getEigenSystem(VtAVdataPtr, foundSize,
     VtAVeigValueDataPtr, VtAVeigVectorDataPtr);
 
-#ifndef _VBLAS_
     //
     // Create eigenvectors
     //
-    for(k = 0; k < foundSize; k++)
+
+#ifndef _VBLAS_
+
+#ifdef _OPENMP
+    #pragma omp parallel for \
+	private(rkk,threadNum) \
+	schedule(static,1)
+
+    for(long k = 0; k < foundSize; k++)
+    {
+    	threadNum = omp_get_thread_num();
+
+        vArrayTmp[k]  = eigVectors[0];
+        vArrayTmp[k] *= VtAVeigVector(0,k);
+        for(long i = 1; i < foundSize; i++)
+        {
+        vArrayOMP[threadNum] =  eigVectors[i];
+        vArrayOMP[threadNum] *= VtAVeigVector(i,k);
+        vArrayTmp[k]         += vArrayOMP[threadNum];
+        }
+
+        rkk = vArrayTmp[k].dot(vArrayTmp[k]);
+        vArrayTmp[k] *= 1.0/rkk;
+    }
+#else
+    //
+    // Create eigenvectors
+    //
+    for(long k = 0; k < foundSize; k++)
     {
         vArrayTmp[k]  = eigVectors[0];
         vArrayTmp[k] *= VtAVeigVector(0,k);
-        for(i = 1; i < foundSize; i++)
+        for(long i = 1; i < foundSize; i++)
         {
         vTemp =  eigVectors[i];
         vTemp *= VtAVeigVector(i,k);
@@ -1482,23 +1545,20 @@ protected:
         vArrayTmp[k] *= 1.0/rkk;
     }
 #endif
-#ifdef _VBLAS_
+#endif
 
-    //
-    // Create eigenvectors
-    //
+#ifdef _VBLAS_
 #ifdef _OPENMP
 		#pragma omp parallel for \
-		private(i,k,rkk) \
+		private(rkk) \
 		schedule(static,1)
 #endif
-    for(k = 0; k < foundSize; k++)
+    for(long k = 0; k < foundSize; k++)
     {
         vArrayTmp[k] = eigVectors[0];
         vArrayTmp[k].scal(VtAVeigVector(0,k));
 
-
-        for(i = 1; i < foundSize; i++)
+        for(long i = 1; i < foundSize; i++)
         {
         vArrayTmp[k].axpy(VtAVeigVector(i,k),eigVectors[i]);
         }
@@ -1507,7 +1567,7 @@ protected:
         vArrayTmp[k].scal(1.0/rkk);
     }
 #endif
-        for(i = 0; i < foundSize; i++)
+        for(long i = 0; i < foundSize; i++)
         {
         eigVectors[i] = vArrayTmp[foundSize - i - 1];
         eigValues[i]  = VtAVeigValue[foundSize - i - 1];
@@ -1531,7 +1591,7 @@ protected:
     if(intervalStopConditionFlag)
     {
     relErrFactor = getRelErrorFactor(lambdaMax,subspaceTol);
-    for(i = 0; i < (long)eigValues.size(); i++)
+    for(long i = 0; i < (long)eigValues.size(); i++)
     {
     if((eigValues[i] - lambdaMax)/relErrFactor < subspaceTol) {finalFoundCount++;}
     }
@@ -1587,21 +1647,46 @@ protected:
 //  specified Bvectors. After orthogonalization, the Avectors are normalized
 //  to unit length.
 //
-//  This routine assumes that vTemp has been initialized
+//  This routine assumes that vTemp and vArrayOMP have been initialized
 //
     void OrthogonalizeAtoB(std::vector< Vtype >& Avectors, long indexA_start, long indexA_end,
     std::vector< Vtype >&  Bvectors, long indexB_start, long indexB_end)
     {
     double rkj;
     double rkk;
-    long j; long k;
-    //
-    //  Orthogonalize vArray to eigVectors (found eigenvectors)
-    //
+     int threadNum;
+
 #ifndef _VBLAS_
-    for(j = indexB_start; j <= indexB_end ; j++)
+
+#ifdef _OPENMP
+    for(long j = indexB_start; j <= indexB_end ; j++)
     {
-    for(k = indexA_start; k <= indexA_end; k++)
+ 	#pragma omp parallel for \
+ 	private(rkj,threadNum) \
+	schedule(static,1)
+    for(long k = indexA_start; k <= indexA_end; k++)
+    {
+    	threadNum = omp_get_thread_num();
+        vArrayOMP[threadNum]  =   Bvectors[j];
+        rkj                   =   Avectors[k].dot(Bvectors[j]);
+        vArrayOMP[threadNum] *=  -rkj;
+        Avectors[k]          +=   vArrayOMP[threadNum];
+    }
+    }
+
+	#pragma omp parallel for \
+	private(rkk) \
+	schedule(static,1)
+    for(long k = indexA_start; k <= indexA_end; k++)
+    {
+    rkk           = std::sqrt(Avectors[k].dot(Avectors[k]));
+    Avectors[k]  *= 1.0/rkk;
+    }
+#else
+
+    for(long j = indexB_start; j <= indexB_end ; j++)
+    {
+    for(long k = indexA_start; k <= indexA_end; k++)
     {
         vTemp           =   Bvectors[j];
         rkj             =   Avectors[k].dot(Bvectors[j]);
@@ -1609,21 +1694,24 @@ protected:
         Avectors[k]    +=   vTemp;
     }
     }
-    for(k = indexA_start; k <= indexA_end; k++)
+    for(long k = indexA_start; k <= indexA_end; k++)
     {
     rkk           = std::sqrt(Avectors[k].dot(Avectors[k]));
     Avectors[k]  *= 1.0/rkk;
     }
 #endif
+#endif
+
+
 #ifdef _VBLAS_
-for(j = indexB_start; j <= indexB_end; j++)
+for(long j = indexB_start; j <= indexB_end; j++)
 {
 #ifdef _OPENMP
-	   #pragma omp parallel for \
-	   private(k,rkj) \
+ 	   #pragma omp parallel for \
+ 	   private(rkj) \
 	   schedule(static,1)
 #endif
-       for(k = indexA_start; k <= indexA_end; k++)
+       for(long k = indexA_start; k <= indexA_end; k++)
        {
         rkj  =   Avectors[k].dot(Bvectors[j]);
         Avectors[k].axpy(-rkj,Bvectors[j]);
@@ -1631,10 +1719,10 @@ for(j = indexB_start; j <= indexB_end; j++)
 }
 #ifdef _OPENMP
 #pragma omp parallel for \
-private(k,rkk) \
+private(rkk) \
 schedule(static,1)
 #endif
-for(k = indexA_start; k <= indexA_end; k++)
+for(long k = indexA_start; k <= indexA_end; k++)
 {
     rkk  =   Avectors[k].nrm2();
     Avectors[k].scal(1.0/rkk);
@@ -1643,7 +1731,7 @@ for(k = indexA_start; k <= indexA_end; k++)
 }
 
 //
-//  This routine assumes that vTemp has been initialized
+//  This routine assumes that vTemp and vArrayOMP have been initialized
 //
 
 void orthogonalizeVarray(long subspaceSize)
@@ -1653,6 +1741,26 @@ void orthogonalizeVarray(long subspaceSize)
 
 #ifndef _VBLAS_
 
+#ifdef _OPENMP
+    int threadNum;
+	for(long k = 1; k <= subspaceSize; k++)
+    {
+        rkk          = std::sqrt(vArray[k-1].dot(vArray[k-1]));
+        vArray[k-1] *= 1.0/rkk;
+
+		#pragma omp parallel for \
+		private(rkj,threadNum) \
+		schedule(static,1)
+        for(long j = k+1; j <= subspaceSize; j++)
+        {
+        	threadNum = omp_get_thread_num();
+            rkj                    =   vArray[k-1].dot(vArray[j-1]);
+            vArrayOMP[threadNum]   =   vArray[k-1];
+            vArrayOMP[threadNum]  *=  -rkj;
+            vArray[j-1]           +=   vArrayOMP[threadNum];
+        }
+    }
+#else
 //  Orthogonalize the subspace vectors using Modified Gram-Schmidt
 
     for(long k = 1; k <= subspaceSize; k++)
@@ -1668,10 +1776,9 @@ void orthogonalizeVarray(long subspaceSize)
         }
     }
 #endif
+#endif
+
 #ifdef _VBLAS_
-
-    long j;
-
 //  Orthogonalize the subspace vectors using modified Gram-Schmidt
 
     for(long k = 1; k <= subspaceSize; k++)
@@ -1680,10 +1787,10 @@ void orthogonalizeVarray(long subspaceSize)
         vArray[k-1].scal(1.0/rkk);
 #ifdef _OPENMP
 		#pragma omp parallel for \
-		private(j,rkj) \
+		private(rkj) \
 		schedule(static,1)
 #endif
-        for(j = k+1; j <= subspaceSize; j++)
+        for(long j = k+1; j <= subspaceSize; j++)
         {
             rkj  =   vArray[j-1].dot(vArray[k-1]);
             vArray[j-1].axpy(-rkj,vArray[k-1]);
@@ -1696,6 +1803,7 @@ void orthogonalizeVarray(long subspaceSize)
     bool verboseFlag;
     bool eigDiagnosticsFlag;
 
+    std::vector< Vtype >     vArrayOMP;
     std::vector< Vtype >        vArray;
     std::vector< Vtype >     vArrayTmp;
 
