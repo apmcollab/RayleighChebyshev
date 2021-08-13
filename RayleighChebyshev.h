@@ -669,7 +669,6 @@ protected:
     double* VtAVeigVectorDataPtr;
 
     double rkk; 
-    double rkj;
 
     long   starDegree     = 0;
     long   starDegreeSave = 0;
@@ -1654,11 +1653,11 @@ schedule(static,1)
     {
     double rkj;
     double rkk;
-     int threadNum;
 
 #ifndef VBLAS_
 
 #ifdef _OPENMP
+    int threadNum;
     for(long j = indexB_start; j <= indexB_end ; j++)
     {
  	#pragma omp parallel for \
