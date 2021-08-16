@@ -495,10 +495,6 @@ double lambdaStar, long polyDegreeMax, long& starDegree, double& starBound)
     double lambdaStarShift = lambdaStar + shift;
     double ratio;
 
-    long MA; 
-    long MB;
-    int exitFlag;
-
     // Check for degree 1
 
     polyDegree = 1;
@@ -520,6 +516,9 @@ double lambdaStar, long polyDegreeMax, long& starDegree, double& starBound)
 //  To improve efficiency, one could use look up tables for getXstar()
 //  and getUpperXstar()
 //
+    long MB;
+    int exitFlag;
+
     MB       = 2;
 
     exitFlag = 0;
