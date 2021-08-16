@@ -356,35 +356,12 @@ double evaluatePolynomial(double lambda)
 
 double getPmNextToLastRoot()
 {
-    //
-    // The secant method with a good initial guess.
-    //
-    double tol = 1.0e-12;
-
-    double xa;   double fa;
-    double xb;   double fb; 
-    double xc;   
-    double diff;
-
-    double PmPrimeRoot = getPmPrimeFirstRoot();
-
-    xa  = 1.0 - PmPrimeRoot;
-    fa  = evaluatePm(xa);
-    xb  = 1.0 - 1.5*PmPrimeRoot;
-    fb  = evaluatePm(xb);
-
-    while(std::abs(xa-xb) > tol)
-    {
-        diff = (fb-fa)/(xb-xa);
-        xc   = xb - evaluatePm(xb)/diff;
-        xa   = xb;
-        fa   = fb;
-        xb   = xc;
-        fb   = evaluatePm(xb);
-    }
-    return xb;
-
+    double pi = 3.1415926535897932384;
+    double m  = polyDegree;
+    
+    return (std::cos(((2.0)/(m+1.0))*pi) + 1)*0.5;
 }
+
 double getPmPrimeFirstRoot()
 {
     //
@@ -534,9 +511,15 @@ double lambdaStar, long polyDegreeMax, long& starDegree, double& starBound)
     }
 
 //  Find values of polyDegree that bracket the solution 
-//  by successively doubling to find an upper bound 
+//  by successively increasing to find an upper bound 
 
-    MA       = 1; 
+// 
+//  Currently a very inefficient method, but generally infallable, 
+//  which is why the previous procedure was replaced. 
+//
+//  To improve efficiency, one could use look up tables for getXstar()
+//  and getUpperXstar()
+//
     MB       = 2;
 
     exitFlag = 0;
@@ -547,7 +530,7 @@ double lambdaStar, long polyDegreeMax, long& starDegree, double& starBound)
         if(ratio*(lambdaBound + shift) < lambdaStarShift )
         {exitFlag    = 1;}
         else
-        {MB *= 2;}
+        {MB += 1;}
     }
 
     if(MB >= polyDegreeMax) 
@@ -557,31 +540,9 @@ double lambdaStar, long polyDegreeMax, long& starDegree, double& starBound)
     starBound   = lambdaBound;
     return;
     }
-//
-//  Use a bisection procedure to bracket the solution 
-//
-    double valMid; 
-    long   Mmid; long Mdiff;
+    
+    // Reset bound so get coincidence 
 
-    exitFlag = 0;
-    while(exitFlag == 0)
-    {
-    Mdiff = (MB - MA);
-    if(Mdiff > 1)
-    {
-        Mmid = MA + Mdiff/2;
-        polyDegree  = Mmid;
-        ratio       = (getXStar()/getUpperXStar());
-        valMid      = ratio*(lambdaBound + shift) - lambdaStarShift;
-        if(valMid >= 0){ MA = Mmid;}
-        else           { MB = Mmid;}
-    }
-    else
-    {exitFlag = 1;};
-    }
-//
-//  Adjust spectral radius bound to obtain equality
-//
     starDegree  = MB;
     polyDegree  = starDegree;
     ratio       = (getXStar()/getUpperXStar());
