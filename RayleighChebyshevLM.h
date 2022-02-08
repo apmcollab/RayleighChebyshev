@@ -1,7 +1,7 @@
 /**
                          RayleighChebyshevLM.h
 
-                (RayleighChebyshev for Large Memory problems)
+                (RayleighChebyshev for Large Matrix problems)
 
    This version of Rayleigh Chebyshev is a multi-threaded implementation
    that uses only one copy of the operator whose eigensystem is being computed,
@@ -662,7 +662,6 @@ protected:
     // been found
     //
 
-
     vArray.resize(subspaceSize);
     vArrayTmp.resize(subspaceSize);
 
@@ -1004,7 +1003,11 @@ protected:
 // CCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 
 #ifdef _OPENMP
-    OpVarray = vArray;
+    OpVarray.resize(vArray.size());
+	for(size_t p = 0; p < vArray.size(); p++)
+	{
+    	OpVarray[p].initialize(vArray[p]);
+	}
     oP.apply(OpVarray);
 #endif
 

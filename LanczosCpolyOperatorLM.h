@@ -1,7 +1,7 @@
 //
 //              LanczosCpolyOperatorLM.h
 //
-//     LanczosCpolyOperator for Large Memory problems
+//     LanczosCpolyOperator for Large Matrix problems
 //
 // This version of LanczosCpolyOperator is a multi-threaded implementation
 // that uses only one copy of the operator whose eigensystem is being computed,
@@ -181,15 +181,27 @@ void apply(std::vector<Vtype>& vArray)
     double gamma1     = -2.0/(rhoB - 2.0*shift);
     double gamma2     =  2.0 - (4.0*shift)/rhoB;
 
-    vn   = vArray;
-    vnm1 = vArray;
-    vnm2 = vArray;
+    size_t vSize = vArray.size();
+
+    vn.resize(vSize);
+    vnm1.resize(vSize);
+    vnm2.resize(vSize);
+
+#ifdef _OPENMP
+       #pragma omp parallel for
+#endif
+	for(size_t p = 0; p < vSize; p++)
+	{
+       vn[p].initialize(vArray[p]);
+       vnm1[p].initialize(vArray[p]);
+       vnm2[p].initialize(vArray[p]);
+	}
 
     vnArrayPtr   = &vn;
     vnm1ArrayPtr = &vnm1;
     vnm2ArrayPtr = &vnm2;
 
-    size_t vSize = vArray.size();
+
 
     for(repCount = 1; repCount <= repetitionFactor; repCount++)
     {
@@ -287,16 +299,26 @@ void apply(std::vector<Vtype>& vArray)
     double gamma1     = -2.0/(rhoB - 2.0*shift);
     double gamma2     =  2.0 - (4.0*shift)/rhoB;
 
-    vn   = vArray;
-    vnm1 = vArray;
-    vnm2 = vArray;
+    size_t vSize = vArray.size();
+
+    vn.resize(vSize);
+    vnm1.resize(vSize);
+    vnm2.resize(vSize);
+
+#ifdef _OPENMP
+       #pragma omp parallel for
+#endif
+	for(size_t p = 0; p < vSize; p++)
+	{
+       vn[p].initialize(vArray[p]);
+       vnm1[p].initialize(vArray[p]);
+       vnm2[p].initialize(vArray[p]);
+	}
 
     vnArrayPtr   = &vn;
     vnm1ArrayPtr = &vnm1;
     vnm2ArrayPtr = &vnm2;
 
-
-    size_t vSize = vArray.size();
 
     for(repCount = 1; repCount <= repetitionFactor; repCount++)
      {
