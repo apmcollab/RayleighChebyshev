@@ -181,7 +181,7 @@ void apply(std::vector<Vtype>& vArray)
     double gamma1     = -2.0/(rhoB - 2.0*shift);
     double gamma2     =  2.0 - (4.0*shift)/rhoB;
 
-    size_t vSize = vArray.size();
+    long vSize = (long)vArray.size();
 
     vn.resize(vSize);
     vnm1.resize(vSize);
@@ -190,7 +190,7 @@ void apply(std::vector<Vtype>& vArray)
 #ifdef _OPENMP
        #pragma omp parallel for
 #endif
-	for(size_t p = 0; p < vSize; p++)
+	for(long p = 0; p < vSize; p++)
 	{
        vn[p].initialize(vArray[p]);
        vnm1[p].initialize(vArray[p]);
@@ -211,7 +211,7 @@ void apply(std::vector<Vtype>& vArray)
 #ifdef _OPENMP
        #pragma omp parallel for
 #endif
-        for(size_t p = 0; p < vSize; p++)
+        for(long p = 0; p < vSize; p++)
         {
         (*vnm2ArrayPtr)[p] = vArray[p];
         (*vnm1ArrayPtr)[p] = vArray[p];
@@ -222,7 +222,7 @@ void apply(std::vector<Vtype>& vArray)
 #ifdef _OPENMP
        #pragma omp parallel for
 #endif
-        for(size_t p = 0; p < vSize; p++)
+        for(long p = 0; p < vSize; p++)
         {
         (*vnm1ArrayPtr)[p]  *=  gamma1;
         (*vnm1ArrayPtr)[p]  += (*vnm2ArrayPtr)[p];
@@ -237,7 +237,7 @@ void apply(std::vector<Vtype>& vArray)
 #ifdef _OPENMP
        #pragma omp parallel for
 #endif
-        for(size_t p = 0; p < vSize; p++)
+        for(long p = 0; p < vSize; p++)
         {
         (*vnArrayPtr)[p]  =  (*vnm1ArrayPtr)[p];
         }
@@ -247,7 +247,7 @@ void apply(std::vector<Vtype>& vArray)
 #ifdef _OPENMP
        #pragma omp parallel for
 #endif
-        for(size_t p = 0; p < vSize; p++)
+        for(long p = 0; p < vSize; p++)
         {
         (*vnArrayPtr)[p]   *=  gamma1;
         (*vnArrayPtr)[p]   += (*vnm1ArrayPtr)[p];
@@ -270,7 +270,7 @@ void apply(std::vector<Vtype>& vArray)
 #ifdef _OPENMP
        #pragma omp parallel for
 #endif
-        for(size_t p = 0; p < vSize; p++)
+        for(long p = 0; p < vSize; p++)
         {
         (*vnm1ArrayPtr)[p] *= (1.0/double(polyDegree+1));
         vArray[p]      = (*vnm1ArrayPtr)[p];
@@ -299,7 +299,7 @@ void apply(std::vector<Vtype>& vArray)
     double gamma1     = -2.0/(rhoB - 2.0*shift);
     double gamma2     =  2.0 - (4.0*shift)/rhoB;
 
-    size_t vSize = vArray.size();
+    long vSize = (long)vArray.size();
 
     vn.resize(vSize);
     vnm1.resize(vSize);
@@ -308,7 +308,7 @@ void apply(std::vector<Vtype>& vArray)
 #ifdef _OPENMP
        #pragma omp parallel for
 #endif
-	for(size_t p = 0; p < vSize; p++)
+	for(long p = 0; p < vSize; p++)
 	{
        vn[p].initialize(vArray[p]);
        vnm1[p].initialize(vArray[p]);
@@ -329,7 +329,7 @@ void apply(std::vector<Vtype>& vArray)
 #ifdef _OPENMP
        #pragma omp parallel for
 #endif
-        for(size_t p = 0; p < vSize; p++)
+        for(long p = 0; p < vSize; p++)
         {
         (*vnm2ArrayPtr)[p] = vArray[p];
         (*vnm1ArrayPtr)[p] = vArray[p];
@@ -338,7 +338,7 @@ void apply(std::vector<Vtype>& vArray)
         Op->apply(*vnm1ArrayPtr);
 
 
-        for(size_t p = 0; p < vSize; p++)
+        for(long p = 0; p < vSize; p++)
         {
         (*vnm1ArrayPtr)[p].axpby(gamma2,(*vnm2ArrayPtr)[p],gamma1*gamma2);
         }
@@ -352,7 +352,7 @@ void apply(std::vector<Vtype>& vArray)
 #ifdef _OPENMP
        #pragma omp parallel for
 #endif
-        for(size_t p = 0; p < vSize; p++)
+        for(long p = 0; p < vSize; p++)
         {
         (*vnArrayPtr)[p] = (*vnm1ArrayPtr)[p];
         }
@@ -362,7 +362,7 @@ void apply(std::vector<Vtype>& vArray)
 #ifdef _OPENMP
        #pragma omp parallel for
 #endif
-        for(size_t p = 0; p < vSize; p++)
+        for(long p = 0; p < vSize; p++)
         {
         (*vnArrayPtr)[p].axpby(gamma2,(*vnm1ArrayPtr)[p],gamma1*gamma2);
         (*vnArrayPtr)[p].axpy(-1.0,(*vnm2ArrayPtr)[p]);
@@ -381,7 +381,7 @@ void apply(std::vector<Vtype>& vArray)
 #ifdef _OPENMP
        #pragma omp parallel for
 #endif
-        for(size_t p = 0; p < vSize; p++)
+        for(long p = 0; p < vSize; p++)
         {
         (*vnm1ArrayPtr)[p] *= (1.0/double(polyDegree+1));
         vArray[p]      = (*vnm1ArrayPtr)[p];
