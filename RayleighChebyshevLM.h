@@ -626,7 +626,7 @@ protected:
     subspaceSize      = subspaceIncrementSize +  bufferSize;
     foundSize         = 0;
 
-    int threadNum;
+
 
     //
     // Reset subspace sizes (if necessary) to make sure 
@@ -1013,9 +1013,7 @@ protected:
 
 
 #ifdef _OPENMP
-#pragma omp parallel for \
-private(threadNum) \
-schedule(static,1)
+#pragma omp parallel for schedule(static,1)
     for(long i = 0; i < subspaceSize; i++)
     {
         for(long j = i; j < subspaceSize; j++)
@@ -1199,6 +1197,7 @@ schedule(static,1)
 #ifndef VBLAS_
 
 #ifdef _OPENMP
+    int threadNum;
     #pragma omp parallel for \
 	private(rkk,threadNum) \
 	schedule(static,1)
@@ -1469,9 +1468,7 @@ oP.apply(vArrayTmp);
 #endif
 
 #ifdef _OPENMP
-#pragma omp parallel for \
-private(threadNum) \
-schedule(static,1)
+#pragma omp parallel for schedule(static,1)
     for(long i = 0; i < foundSize; i++)
     {
         for(long j = i; j < foundSize; j++)
@@ -1510,6 +1507,7 @@ schedule(static,1)
 #ifndef VBLAS_
 
 #ifdef _OPENMP
+    int threadNum;
     #pragma omp parallel for \
 	private(rkk,threadNum) \
 	schedule(static,1)
