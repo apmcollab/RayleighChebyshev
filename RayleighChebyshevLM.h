@@ -465,6 +465,7 @@ class RayleighChebyshevLM
     double lambdaMax       = maxEigValueBound;
 
     this->clearIntervalStopCondition();
+    this->setHardIntervalStop();
 
     return getMinIntervalEigenSystem_Base(minEigValueEst, lambdaMax, maxEigValueBound,
     subspaceTol, subspaceIncrementSize, bufferSize, maxEigensystemDim, 
