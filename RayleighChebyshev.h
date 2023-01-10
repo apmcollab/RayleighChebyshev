@@ -459,6 +459,7 @@ class RayleighChebyshev
     double lambdaMax       = maxEigValueBound;
 
     this->clearIntervalStopCondition();
+    this->setHardIntervalStop();
 
     return getMinIntervalEigenSystem_Base(minEigValueEst, lambdaMax, maxEigValueBound,
     subspaceTol, subspaceIncrementSize, bufferSize, maxEigensystemDim, 
@@ -471,6 +472,7 @@ class RayleighChebyshev
     long bufferSize, Vtype& vStart, Otype& oP, VRandomizeOpType& randOp, 
     std::vector<double>&  eigValues, std::vector < Vtype > & eigVectors)
     {
+
 
     double minFinderTol              = subspaceTol;
     
@@ -1180,6 +1182,7 @@ schedule(static,1)
     innerLoopCount++;
     }
 
+
     if(verboseFlag == 1)
     {
     if(( fixedIterationCount < 0) && (innerLoopCount >= maxInnerLoopCount))
@@ -1328,9 +1331,11 @@ schedule(static,1)
     relErrFactor = getRelErrorFactor(lambdaMax,subspaceTol);
     vtvEigCheck = (vtvEig - lambdaMax)/relErrFactor;
 
-
+//
+//  Using a hard interval stop when computing a fixed number of eigenpairs.
+//
 //  We assume that states are degenerate if |lambda[i] - lambda[i+1]|/relErrFactor < 10.0*subspaceTol
-//  and hence require a relative gap of size 10.0*subspaceTol between lambdaMax and the guard std::vector
+//  and hence require a relative gap of size 10.0*subspaceTol between lambdaMax and the guard vector
 //  to insure that all vectors in the subspace associated with an eigenvalue with multiplicity > 1
 //  are captured.
 
