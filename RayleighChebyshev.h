@@ -622,7 +622,7 @@ protected:
     subspaceSize      = subspaceIncrementSize +  bufferSize;
     foundSize         = 0;
 
-    int threadNum;
+
 
     //
     // Reset subspace sizes (if necessary) to make sure 
@@ -737,6 +737,7 @@ protected:
     vTemp.initialize(vStart);
 
     #ifdef _OPENMP
+    int threadNum;
     vArrayOMP.resize(omp_get_max_threads());
     for(long k = 0; k < omp_get_max_threads(); k++)
     {
