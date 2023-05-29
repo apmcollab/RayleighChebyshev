@@ -177,7 +177,7 @@
 #include "LanczosCpolyOperatorLM.h"
 #include "LanczosCpoly.h"
 #include "LanczosMaxMinFinder.h"
-#include "RC_Double2Darray.h"
+#include "RCarray2d.h"
 #include "JacobiDiagonalizer.h"
 
 #ifdef TIMING_
@@ -1818,8 +1818,8 @@ void orthogonalizeVarray(long subspaceSize)
 
     Vtype vTemp;
 
-    RC_Double2Darray       VtAV;
-    RC_Double2Darray       VtAVeigVector;
+    RCarray2d<double>      VtAV;
+    RCarray2d<double>      VtAVeigVector;
     std::vector<double>    VtAVeigValue;
 
     double* VtAVdataPtr;
