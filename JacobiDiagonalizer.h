@@ -56,12 +56,16 @@ Version : Tue Feb 14 16:02:58 2012
 #include <iostream>
 
 //
-// Jacobi
-
+// The default assumed storage format for the input matrix
+// is a matrix stored by rows.  Column storage format for
+// the input matrix is specified by invoking the
+// member function clearIOdataRowStorage() after
+// a class instance is declared but before any computation
+// is performed.
 //
-// Notes : Internally the matrix is stored by columns. The input matrices
-//         are assumed to be stored by rows. 
-// 
+// Internally the matrix is stored by columns.
+//
+
 class JacobiDiagonalizer
 {
 public:
@@ -73,6 +77,8 @@ JacobiDiagonalizer(void)
     eigVecFlag  = 0;
     diagData    = 0;
     sortIndex   = 0;
+    sortIncreasing   = false;
+    IOdataRowStorage = true;
 }
 
 ~JacobiDiagonalizer(void)
@@ -83,70 +89,28 @@ JacobiDiagonalizer(void)
     if(sortIndex  != 0) delete [] sortIndex;
 }
 
-inline double& M(long i, long j)
+
+
+void setSortIncreasing(bool val)
 {
-        return *(matrixData + i + j*matrixDimension);
+	sortIncreasing = val;
 }
 
-inline double& eVector(long i, long j)
+void clearSortIncreasing()
 {
-        return *(eVecData  + i  + j*matrixDimension);
+	sortIncreasing = false;
 }
-//
-// Initializes the internal data arrays and copies
-// over the data. 
-//
-void initialize(double* mData, long n)
+
+void setIOdataRowStorage(bool val)
 {
-    if(matrixData != 0) 
-    {
-    if(n != matrixDimension) 
-    {
-    delete [] matrixData; matrixData = 0;
-    delete [] diagData;   diagData   = 0;
-    delete [] sortIndex;  sortIndex  = 0;
-    if(eigVecFlag == 1)
-    {if(eVecData != 0){delete [] eVecData;  eVecData = 0;}}
-    }
-    }
-    matrixDimension = n;
-    matrixDataSize  = matrixDimension*matrixDimension;
-
-    if(matrixData  == 0) matrixData  = new double[matrixDataSize];
-    if(diagData    == 0) diagData    = new double[matrixDimension];
-    if(sortIndex   == 0) sortIndex   = new long[matrixDimension];
-
-    if(eigVecFlag   == 1) 
-    {
-     if(eVecData == 0) 
-     eVecData = new double[matrixDimension*matrixDimension];
-    }
-//
-//  Store input matrix in matrixData 
-//
- 
-    long i; long j; long k;
-
-	for(i = 0; i < matrixDimension; i++)
-    {
-    for(j = i; j < matrixDimension; j++)
-    {
-    M(i,j) = *(mData + j + i*matrixDimension);
-    }}
-//
-//  Initialize eigenvector data array
-// 
-    if(eigVecFlag == 1)
-    {
-    for(k = 0; k < matrixDimension*matrixDimension; k++) 
-    {eVecData[k] = 0.0;}
-
-    for(i = 0; i < matrixDimension; i++)
-    {
-      eVector(i,i) = 1.0;
-    }
-    }
+	IOdataRowStorage = val;
 }
+
+void clearIOdataRowStorage()
+{
+	IOdataRowStorage = false;
+}
+
 void applyJacobiTransformation(long i, long j,double c, double s, double t)
 {
     long k;
@@ -224,7 +188,14 @@ void updateEigenvectors(long i, long j, double c, double s)
 //  --Output-- 
 //
 //  eigVal  :  contains the eigenvalues (sorted)
-//       
+//
+// Note: The default assumed storage format for the input matrix
+// is a matrix stored by rows.  Column storage format for
+// the input matrix is specified by invoking the
+// member function clearIOdataRowStorage() after
+// a class instance is declared but before any computation
+// is performed.
+//
 void getEigenvalues(double* mData, long n, double* eigVal)
 {
 	eigVecFlag = 0;
@@ -269,6 +240,13 @@ void getEigenvalues(double* mData, long n, double* eigVal)
 //  eigVec : the jth column of the array contains the
 //           jth normalized eigenvector. The array data 
 //           is stored by rows. 
+//
+// Note: The default assumed storage format for the input matrix
+// is a matrix stored by rows.  Column storage format for
+// the input matrix is specified by invoking the
+// member function clearIOdataRowStorage() after
+// a class instance is declared but before any computation
+// is performed.
 //              
 void getEigenSystem(double* mData, long n, double* eigVal, double* eigVec)
 {
@@ -291,12 +269,24 @@ void getEigenSystem(double* mData, long n, double* eigVal, double* eigVec)
 //
     long i; long j;
 
+    if(IOdataRowStorage)
+    {
 	for(i = 0; i < matrixDimension; i++)
     {
     for(j = 0; j < matrixDimension; j++)
     {
     *(eigVec + j + i*matrixDimension) = eVector(i,sortIndex[j]);
     }}
+    }
+    else
+    {
+    for(i = 0; i < matrixDimension; i++)
+    {
+    for(j = 0; j < matrixDimension; j++)
+    {
+    *(eigVec + i + j*matrixDimension) = eVector(i,sortIndex[j]);
+    }}
+    }
 }
 
 void computeEigenDecomposition()
@@ -386,6 +376,82 @@ void computeEigenDecomposition()
 
     //cout << "Number of Sweeps " << sweepCount << endl;
 }
+
+inline double& M(long i, long j)
+{
+        return *(matrixData + i + j*matrixDimension);
+}
+
+inline double& eVector(long i, long j)
+{
+        return *(eVecData  + i  + j*matrixDimension);
+}
+//
+// Initializes the internal data arrays and copies
+// over the data.
+//
+void initialize(double* mData, long n)
+{
+    if(matrixData != 0)
+    {
+    if(n != matrixDimension)
+    {
+    delete [] matrixData; matrixData = 0;
+    delete [] diagData;   diagData   = 0;
+    delete [] sortIndex;  sortIndex  = 0;
+    if(eigVecFlag == 1)
+    {if(eVecData != 0){delete [] eVecData;  eVecData = 0;}}
+    }
+    }
+    matrixDimension = n;
+    matrixDataSize  = matrixDimension*matrixDimension;
+
+    if(matrixData  == 0) matrixData  = new double[matrixDataSize];
+    if(diagData    == 0) diagData    = new double[matrixDimension];
+    if(sortIndex   == 0) sortIndex   = new long[matrixDimension];
+
+    if(eigVecFlag   == 1)
+    {
+     if(eVecData == 0)
+     eVecData = new double[matrixDimension*matrixDimension];
+    }
+//
+//  Store input matrix in matrixData
+//
+    long i; long j; long k;
+
+    if(IOdataRowStorage)
+    {
+    	for(i = 0; i < matrixDimension; i++)
+    	{
+    		for(j = i; j < matrixDimension; j++)
+    		{
+    			M(i,j) = *(mData + j + i*matrixDimension);
+    		}}
+    }
+    else // input data in column storage
+    {
+    	for(i = 0; i < matrixDimension; i++)
+    	{
+    		for(j = i; j < matrixDimension; j++)
+    		{
+    			M(i,j) = *(mData + i + j*matrixDimension);
+    		}}
+    }
+//
+//  Initialize eigenvector data array
+//
+    if(eigVecFlag == 1)
+    {
+    for(k = 0; k < matrixDimension*matrixDimension; k++)
+    {eVecData[k] = 0.0;}
+
+    for(i = 0; i < matrixDimension; i++)
+    {
+      eVector(i,i) = 1.0;
+    }
+    }
+}
 //
 //  Returns the current state of the internal matrix 
 //
@@ -443,12 +509,23 @@ void sortWithIndex(double* vals, long* index, long n)
 			valTmp=vals[i-1];
             indTmp=index[i-1];
 			j=i;
-			while (vals[(j-inc)-1] < valTmp) {
+			if(sortIncreasing)
+			{
+			while (vals[(j-inc)-1] > valTmp) {
 				vals[j-1]  = vals[(j-inc)-1];
                 index[j-1] = index[(j-inc)-1];
 				j -= inc;
 				if (j <= inc) break;
-			}
+			}}
+			else
+			{
+				while (vals[(j-inc)-1] < valTmp) {
+				vals[j-1]  = vals[(j-inc)-1];
+                index[j-1] = index[(j-inc)-1];
+				j -= inc;
+				if (j <= inc) break;
+			}}
+
 			vals[j-1]  = valTmp;
             index[j-1] = indTmp;
 		}
@@ -464,6 +541,9 @@ double                  tol;
 int              eigVecFlag;
 long        matrixDimension;
 long         matrixDataSize;
+
+bool         sortIncreasing;
+bool       IOdataRowStorage;
 };
 
 #undef JACOBI_DIAGONALIZER_TOL

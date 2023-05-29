@@ -108,6 +108,7 @@
 #ifndef LANCZOS_C_POLY_
 #define LANCZOS_C_POLY_
 
+
 class LanczosCpoly
 {
 public:
@@ -119,12 +120,7 @@ LanczosCpoly()
 
 LanczosCpoly(const LanczosCpoly& P)
 {
-     this->polyDegree          = P.polyDegree;
-     this->repetitionFactor    = P.repetitionFactor;
-     this->lambdaMax           = P.lambdaMax;
-     this->shift               = P.shift;
-     this->XStar               = P.XStar;
-     this->UpperXStar          = P.UpperXStar;
+     initialize(P);
 }
 
 LanczosCpoly(long polyDegree, long repetitionFactor, 
@@ -146,6 +142,16 @@ void initialize()
       shift               = 0.0;
       XStar               = 0.0;
       UpperXStar          = 1.0;
+}
+
+void initialize(const LanczosCpoly& P)
+{
+     this->polyDegree          = P.polyDegree;
+     this->repetitionFactor    = P.repetitionFactor;
+     this->lambdaMax           = P.lambdaMax;
+     this->shift               = P.shift;
+     this->XStar               = P.XStar;
+     this->UpperXStar          = P.UpperXStar;
 }
 
 void initialize(long polyDegree, long repetitionFactor, 

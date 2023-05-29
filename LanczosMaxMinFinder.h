@@ -45,11 +45,7 @@
 
 
 	Author:  Chris Anderson
-    Changes:
-
-    Aug. 17, 2006: Removed the dependency on cammva
-
-    March, 7, 2012 : Removed the dependency on std::vector<double>
+    Version: May 25,2023 (Now supports complex Hermitian operators)
 
 */
 /*
@@ -84,10 +80,17 @@
 #define  LANCZOS_MAX_MIN_FINDER_ITERATION_MAX  10000
 #endif
 
+#ifndef  LANCZOS_MAX_MIN_FINDER_HERMITIAN_ERROR_TOL
+#define  LANCZOS_MAX_MIN_FINDER_HERMITIAN_ERROR_TOL 1.0e-12
+#endif
+
+
 #include <iostream>
 #include <cmath>
 #include <cstdio>
 #include <stdexcept>
+#include <vector>
+#include <complex>
 #include "Dstebz_C.h"
 
 /*
@@ -131,6 +134,8 @@ void initialize()
 
     maxEigFlag = true;
     minEigFlag = true;
+
+    hermitianErrorTol = LANCZOS_MAX_MIN_FINDER_HERMITIAN_ERROR_TOL;
 }
 
 void initialize(long maxIterCount)
@@ -147,6 +152,8 @@ void initialize(long maxIterCount)
 
     maxEigFlag = true;
     minEigFlag = true;
+
+    hermitianErrorTol = LANCZOS_MAX_MIN_FINDER_HERMITIAN_ERROR_TOL;
 }
 
 double getRelErrorFactor(double val, double tol)
@@ -202,6 +209,10 @@ long getIterationCount()
 	return this->iterCount;
 }
 
+void setHermitianErrorTol(double val)
+{
+	hermitianErrorTol = val;
+}
 //
 // This routine uses the Lanczos procedure to obtain estimates of the algebraically
 // largest and algebraically smallest eigenvalue.
@@ -224,6 +235,8 @@ VRandomizeOpType& randOp, double& minEigValue, double& maxEigValue)
 {
 	double vNorm;
 
+	std::complex<double> alphaK;
+
     eigMaxVector.resize(1);
     eigMinVector.resize(1);
 
@@ -234,11 +247,15 @@ VRandomizeOpType& randOp, double& minEigValue, double& maxEigValue)
     double tol       = errorTolerance;
     if(tol < LANCZOS_SMALL_TOL_ ) { tol = LANCZOS_SMALL_TOL_; }
     double relErrFactor;
+
+    // Complex Hermitian test error tolerance
+
+    double hermitianErrorTol = 1.0e-12;
 //
 //  Create initial vectors
 //
 	randOp.randomize(v);
-    vNorm   = std::sqrt(v.dot(v));
+    vNorm   = std::sqrt(std::abs(v.dot(v)));
     v      *= 1.0/vNorm;
     w       = v;
     wTmp    = v;
@@ -296,7 +313,20 @@ VRandomizeOpType& randOp, double& minEigValue, double& maxEigValue)
         oP.apply(wTmp);
         v   += wTmp;
 
-        alpha[k] = w.dot(v);            // alpha(k) = w.dot(v)
+        //
+        // To facilitate complex inner product
+        //
+        alphaK   = w.dot(v);
+        alpha[k] = alphaK.real();
+
+        if(std::abs(alphaK.imag()) > (1.0 + alphaK.real())*hermitianErrorTol)
+        {
+        	std::string errMsg = "Lanzcos Max Min Finder : \n";
+        	errMsg += "  Input complex valued operator not Hermitian. \n";
+        	throw std::invalid_argument(errMsg);
+        }
+
+        //alpha[k] = w.dot(v);            // alpha(k) = w.dot(v)
 
         wTmp  = w;                      // v = v - alpha(k)*w
         wTmp *= -alpha[k];
@@ -536,6 +566,8 @@ double getMaxEigenvalue(double errorTolerance, Vtype& v, Vtype& w, Vtype& wTmp, 
 
     Dstebz_C        triEigRoutine;
 
+    double hermitianErrorTol;
+
 
 
 std::vector<double>  getLargestSymTriEigValues(long nValues, std::vector<double> & Diag,  std::vector<double> & UpDiag)
@@ -655,6 +687,7 @@ std::vector<double>  getLowestSymTriEigValues(long nValues, std::vector<double> 
 
 };
 
+#undef LANCZOS_MAX_MIN_FINDER_HERMITIAN_ERROR_TOL
 #undef LANCZOS_MAX_MIN_FINDER_ITERATION_MAX
 #undef LANCZOS_SMALL_TOL_
 #endif

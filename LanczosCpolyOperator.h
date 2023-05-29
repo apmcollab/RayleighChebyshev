@@ -3,7 +3,10 @@
 //
 // Instances of this class are scaled Lanczos "C" polynomial operators
 // The apply(...) member function of this class applies the Lanczos C
-// in the associated operator to a vector.
+// polynomial in the associated operator to a vector.
+//
+// The associated operator is referenced via a pointer. Instances
+// of the associated operator are managed externally.
 //
 // This is a templated class with respect to both vector and operator
 // types.
@@ -13,6 +16,7 @@
 // to a block of vectors is carried out by multi-threading the
 // loop over each vector with each thread being associated with
 // a separate instance of a LanczosCpolyOperator.
+//
 //
 // Chris Anderson 2005
 //
@@ -56,14 +60,14 @@
 
    An operator class with the following member function:
 
-   void applyForwardOp(Vtype& V)
+   void apply(Vtype& V)
 
    ############################################################################
 */
 /*
 #############################################################################
 #
-# Copyright 2009-2015 Chris Anderson
+# Copyright 2009-2023 Chris Anderson
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the Lesser GNU General Public License as published by
@@ -83,6 +87,7 @@
 
 
 #include <cmath>
+#include <stdexcept>
 #include "LanczosCpoly.h"
 
 #ifndef LANCZOS_C_POLY_OPERATOR_
@@ -96,10 +101,20 @@ public:
 LanczosCpolyOperator()
 {
       lanczosCpoly.initialize();
-      Op                  = 0;
-      this->vnPtr         = 0;
-      this->vnm1Ptr       = 0;   
-      this->vnm2Ptr       = 0;   
+      Op                  = nullptr;
+      this->vnPtr         = nullptr;
+      this->vnm1Ptr       = nullptr;
+      this->vnm2Ptr       = nullptr;
+      this->vTmpPtr       = nullptr;
+};
+
+LanczosCpolyOperator(const LanczosCpolyOperator& cPolyOp)
+{
+	  initialize();
+	  if(cPolyOp.Op == nullptr) {return;}
+
+      lanczosCpoly.initialize(cPolyOp.lanczosCpoly);
+      Op  = cPolyOp.Op;
 };
 
 LanczosCpolyOperator(long polyDegree, long repetitionFactor, 
@@ -108,32 +123,78 @@ double  lambdaMax,  double shift, Otype& Op)
     lanczosCpoly.initialize(polyDegree, repetitionFactor, lambdaMax, shift);
 
     this->Op                  = &Op;
-    this->vnPtr               = 0;
-    this->vnm1Ptr             = 0;   
-    this->vnm2Ptr             = 0;   
+    this->vnPtr               = nullptr;
+    this->vnm1Ptr             = nullptr;
+    this->vnm2Ptr             = nullptr;
+    this->vTmpPtr             = nullptr;
 }
+
+void initialize()
+{
+	  lanczosCpoly.initialize();
+      Op = nullptr;
+
+      if(vnPtr   != nullptr)  {delete     vnPtr;}
+      if(vnm1Ptr != nullptr)  {delete   vnm1Ptr;}
+      if(vnm2Ptr != nullptr)  {delete   vnm2Ptr;}
+
+      this->vnPtr         = nullptr;
+      this->vnm1Ptr       = nullptr;
+      this->vnm2Ptr       = nullptr;
+      this->vTmpPtr       = nullptr;
+}
+
+
+// The following two member functions are used together to
+// associate an operator with a LanczosCpolyOperator class
+// instance separately from the Lanczos C polynomial
+// parameters.
+//
+void initialize(Otype& Op)
+{
+      lanczosCpoly.initialize();
+      this->Op = &Op;
+};
+
+void setLanczosCpolyParameters(long polyDegree, long repetitionFactor,
+double  lambdaMax, double shift)
+{
+	if(this->Op == nullptr)
+	{
+		std::string errMsg = "\n     LanczosCpolyOperator : setting Lanczos C poly parameters before \n";
+	                errMsg += "\n    associating an operator with the instance. \n";
+		throw std::runtime_error(errMsg);
+	}
+
+	lanczosCpoly.initialize(polyDegree, repetitionFactor, lambdaMax, shift);
+}
+
+
 
 void initialize(long polyDegree, long repetitionFactor, 
 double  lambdaMax, double shift, Otype& Op)
 {
     lanczosCpoly.initialize(polyDegree, repetitionFactor, lambdaMax, shift);
 
-    this->Op                  = &Op;
+    this->Op = &Op;
     
-    if(vnPtr != 0)   delete   vnPtr;
-    if(vnm1Ptr != 0) delete   vnm1Ptr;
-    if(vnm2Ptr != 0) delete   vnm2Ptr;
+    if(vnPtr   != nullptr) {delete   vnPtr;}
+    if(vnm1Ptr != nullptr) {delete   vnm1Ptr;}
+    if(vnm2Ptr != nullptr) {delete   vnm2Ptr;}
 
-    this->vnPtr         = 0;
-    this->vnm1Ptr       = 0;   
-    this->vnm2Ptr       = 0;   
+    this->vnPtr         = nullptr;
+    this->vnm1Ptr       = nullptr;
+    this->vnm2Ptr       = nullptr;
+    this->vTmpPtr       = nullptr;
 }
+
+
 
 ~LanczosCpolyOperator(void)
 {
-    if(vnPtr   != 0) delete   vnPtr;
-    if(vnm1Ptr != 0) delete   vnm1Ptr;
-    if(vnm2Ptr != 0) delete   vnm2Ptr;
+    if(vnPtr   != nullptr) {delete   vnPtr;}
+    if(vnm1Ptr != nullptr) {delete   vnm1Ptr;}
+    if(vnm2Ptr != nullptr) {delete   vnm2Ptr;}
 };
 
 void setShift(double shift)
@@ -178,9 +239,9 @@ void apply(Vtype& v)
     double gamma1     = -2.0/(rhoB - 2.0*shift);
     double gamma2     =  2.0 - (4.0*shift)/rhoB;
 
-    if(vnPtr   == 0) vnPtr   = new Vtype(v);
-    if(vnm1Ptr == 0) vnm1Ptr = new Vtype(v);
-    if(vnm2Ptr == 0) vnm2Ptr = new Vtype(v);
+    if(vnPtr   == nullptr) {vnPtr   = new Vtype(v);}
+    if(vnm1Ptr == nullptr) {vnm1Ptr = new Vtype(v);}
+    if(vnm2Ptr == nullptr) {vnm2Ptr = new Vtype(v);}
 
     for(repCount = 1; repCount <= repetitionFactor; repCount++)
     {
@@ -242,9 +303,9 @@ void apply(Vtype& v)
     double gamma1     = -2.0/(rhoB - 2.0*shift);
     double gamma2     =  2.0 - (4.0*shift)/rhoB;
 
-    if(vnPtr   == 0) vnPtr   = new Vtype(v);
-    if(vnm1Ptr == 0) vnm1Ptr = new Vtype(v);
-    if(vnm2Ptr == 0) vnm2Ptr = new Vtype(v);
+    if(vnPtr   == nullptr) {vnPtr   = new Vtype(v);}
+    if(vnm1Ptr == nullptr) {vnm1Ptr = new Vtype(v);}
+    if(vnm2Ptr == nullptr) {vnm2Ptr = new Vtype(v);}
 
      for(repCount = 1; repCount <= repetitionFactor; repCount++)
      {
@@ -285,15 +346,7 @@ void apply(Vtype& v)
 
 	LanczosCpoly lanczosCpoly;
 
-     long   polyDegree;
-     long   repetitionFactor;
-     double lambdaMax;
-     double shift;
-     double XStar;
-     double UpperXStar;
-    
      Otype* Op;
-
      Vtype* vnPtr;
      Vtype* vnm1Ptr;   
      Vtype* vnm2Ptr;    

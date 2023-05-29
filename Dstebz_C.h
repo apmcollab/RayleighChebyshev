@@ -5,11 +5,18 @@
 #include <sstream>
 #include <exception>
 #include <stdexcept>
+
+#include "LapackInterface/SCC_LapackHeaders.h"
     
 #ifndef DSTEBZ_RC_
 #define DSTEBZ_RC_
 //
-// Dstebz_C is a class that encapsulates the f2c translation of the LAPACK routine dstebz.f
+// This file contains the header for dstebz.f in the LAPACK library. The external library
+// must be one associated with a 64 bit operating system where Fortran integers are
+// mapped to C++ long.
+//
+// If the pre-processor directive INTERNAL_LAPACK is defined, then Dstebz_C is
+// a class that encapsulates the f2c translation of the LAPACK routine dstebz.f
 // and it's dependent routines.
 //
 // Documentation for the calling parameters and return arguments for the member function
@@ -22,12 +29,6 @@
 // (a) The call is dstebz(..) and not dstebz_(...)
 // (b) The first two arguments are passed as char range and char order instead of 
 //     char* range and char* order. 
-// 
-//
-// If EXTERNAL_LAPACK is defined then the routine dstebz_(...) supplied by a lapack library
-// is used to evaluate the dstebz member function of this class. The external library
-// must be one associated with a 64 bit operating system where Fortran integers are
-// mapped to C++ long.
 //
 // After translation all static declarations were removed as well any reference to defines
 // within f2c.h so that there are no external dependencies.
@@ -71,7 +72,7 @@
 #############################################################################
 */
 
-#ifdef EXTERNAL_LAPACK
+#ifndef INTERNAL_LAPACK_
 extern "C" int dstebz_(char* range, char* order, long *n, double *vl, double *vu, long *il, long *iu,
 double *abstol, double *d__, double *e, long *m, long *nsplit, double *w, long *iblock,
 long *isplit, double *work, long *iwork, long *info);
