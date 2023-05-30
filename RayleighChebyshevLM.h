@@ -757,10 +757,19 @@ protected:
 
     if(subspaceSize > vectorDimension)
     {
-    subspaceSize          = vectorDimension;
-    subspaceIncrementSize = vectorDimension;
-    bufferSize            = 0;
-    maxEigensystemDim     = vectorDimension;
+    	if(subspaceIncrementSize < vectorDimension)
+    	{
+    		bufferSize  = vectorDimension - subspaceIncrementSize;
+    		subspaceSize = vectorDimension;
+    	}
+    	else
+    	{
+    		subspaceSize          = vectorDimension;
+    		subspaceIncrementSize = vectorDimension;
+    		bufferSize            = 0;
+    	}
+
+    	maxEigensystemDim     = vectorDimension;
     }
 
     oldEigs.resize(subspaceSize,0.0);
@@ -868,6 +877,7 @@ protected:
     if(vectorDimension == subspaceSize)
     {
     orthogonalize(vArray);
+    orthogonalize(vArray);
     formVtAV(vArray, VtAV);
     computeVtVeigensystem(VtAV, VtAVeigValue, VtAVeigVector);
     createEigenVectorsAndResiduals(VtAVeigVector,vArray,subspaceSize,eigVecResiduals);
@@ -922,14 +932,21 @@ protected:
     }
     }
 
-    //  Orthogonalize working subspace (vArray)
 
     startTimer();
 
+    // Orthogonalize working subspace (vArray)
+    // Repeat orthogonalization initially to compensate for possible
+    // inaccuracies using modified-Gram Schmidt. During iteration,
+    // subspace orthogonality is preserved due to use of eigenvector
+    // basis of projected operator.
+    //
+
+    orthogonalize(vArray);
     orthogonalize(vArray);
 
     incrementTime("ortho");
-    incrementCount("ortho");
+    incrementCount("ortho",2);
 
 
     lambdaStar     = maxEigValue;
