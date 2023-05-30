@@ -890,8 +890,27 @@ protected:
 
     if(vectorDimension == subspaceSize)
     {
+    long maxOrthoCheck   = 10;
+    long orthoCheckCount = 1;
     orthogonalize(vArray);
-    orthogonalize(vArray);
+
+    // Due to instability of modified Gram-Schmidt for creating an
+    // orthonormal basis for a high dimensional vector space, multiple
+    // orthogonalization passes may be needed.
+
+    while((OrthogonalityCheck(vArray, false) > 1.0e-12)&&(orthoCheckCount <= maxOrthoCheck))
+    {
+    	orthoCheckCount += 1;
+    	orthogonalize(vArray);
+    }
+
+    if(orthoCheckCount > maxOrthoCheck)
+    {
+    	std::string errMsg = "\nXXXX RayleighChebyshev Error XXXX";
+    	errMsg +=            "\nUnable to create basis for complete vector space.\n";
+    	errMsg +=            "\nReduce size of buffer and/or subspaceIncrement \n";
+    	throw std::runtime_error(errMsg);
+    }
     formVtAV(vArray, VtAV);
     computeVtVeigensystem(VtAV, VtAVeigValue, VtAVeigVector);
     createEigenVectorsAndResiduals(VtAVeigVector,vArray,subspaceSize,eigVecResiduals);
