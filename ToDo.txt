@@ -1,9 +1,0 @@
-To Do:
-
-May 29, 2023
-
-Add LM version of RayleighChebyshev that support complex Hermitian. 
-Current version will not compile. 
-
-Create diagnostics that identify slow convergence and indicate possible
-remedies based upon distribution of eigenvalues being computed.  
