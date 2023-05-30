@@ -1954,14 +1954,14 @@ double OrthogonalityCheck(std::vector< Vtype >& Avectors, bool printOrthoCheck =
 	{
     	for(size_t j = 0; j < Avectors.size(); j++)
     	{
-    	if(printOrthoCheck) {std::cout << std::abs(Avectors[i].scaledDot(Avectors[j])) << " ";}
+    	if(printOrthoCheck) {std::cout << std::abs(Avectors[i].dot(Avectors[j])) << " ";}
     	if(i != j)
     	{
-    		orthoErrorMax = std::max(orthoErrorMax,std::abs(Avectors[i].scaledDot(Avectors[j])));
+    		orthoErrorMax = std::max(orthoErrorMax,std::abs(Avectors[i].dot(Avectors[j])));
     	}
     	else
     	{
-    		orthoErrorMax = std::max(orthoErrorMax,std::abs(Avectors[i].scaledDot(Avectors[j]) - 1.0));
+    		orthoErrorMax = std::max(orthoErrorMax,std::abs(Avectors[i].dot(Avectors[j]) - 1.0));
     	}
     	}
 	    if(printOrthoCheck){std::cout << std::endl;}
