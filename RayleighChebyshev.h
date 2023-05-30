@@ -713,6 +713,8 @@ protected:
     this->setupTimeData();
     this->startGlobalTimer();
 
+    std::vector<double> residualHistory;
+
     // Insure that subspaceTol isn't too small
 
     if(subspaceTol < RAYLEIGH_CHEBYSHEV_SMALL_TOL_ ) {subspaceTol = RAYLEIGH_CHEBYSHEV_SMALL_TOL_; }
@@ -723,6 +725,7 @@ protected:
 
     eigValues.clear();
     eigVecResiduals.clear();
+
 
     if(not nonRandomStartFlag)
     {
@@ -755,12 +758,22 @@ protected:
 
     long vectorDimension = vStart.getDimension();
 
+
     if(subspaceSize > vectorDimension)
     {
-    subspaceSize          = vectorDimension;
-    subspaceIncrementSize = vectorDimension;
-    bufferSize            = 0;
-    maxEigensystemDim     = vectorDimension;
+    	if(subspaceIncrementSize < vectorDimension)
+    	{
+    		bufferSize  = vectorDimension - subspaceIncrementSize;
+    		subspaceSize = vectorDimension;
+    	}
+    	else
+    	{
+    		subspaceSize          = vectorDimension;
+    		subspaceIncrementSize = vectorDimension;
+    		bufferSize            = 0;
+    	}
+
+    	maxEigensystemDim     = vectorDimension;
     }
 
     oldEigs.resize(subspaceSize,0.0);
@@ -873,11 +886,11 @@ protected:
     }
     #endif
 
-
     // Quick return if subspaceSize >= vector dimension
 
     if(vectorDimension == subspaceSize)
     {
+    orthogonalize(vArray);
     orthogonalize(vArray);
     formVtAV(vArray, VtAV);
     computeVtVeigensystem(VtAV, VtAVeigValue, VtAVeigVector);
@@ -887,7 +900,6 @@ protected:
     eigValues  = VtAVeigValue;
     return subspaceSize;
     }
-
 
     // Initialize filter polynomial operators
 
@@ -946,6 +958,14 @@ protected:
 
     startTimer();
 
+    //
+    // Repeat orthogonalization initially to compensate for possible
+    // inaccuracies using modified-Gram Schmidt. During iteration,
+    // subspace orthogonality is preserved due to use of eigenvector
+    // basis of projected operator.
+    //
+
+    orthogonalize(vArray);
     orthogonalize(vArray);
 
     incrementTime("ortho");
@@ -963,6 +983,8 @@ protected:
     stopCheckValue = subspaceTol + 1.0e10;
 
     applyCount = 0;
+    residualHistory.clear();
+
     while((stopCheckValue  > subspaceTol)&&(innerLoopCount < maxInnerLoopCount))
     {
 //  
@@ -992,7 +1014,7 @@ protected:
     }
 
     ////////ZZZZZZZZZZZZZZZZZZZZZZZ
-    // For multiplicity > subspace dimension
+    //For multiplicity > subspace dimension
     else if((not (maxEigDiff > subspaceTol))&&(innerLoopCount > 3)&&(eigDiffRatio < .2)) // .2 is slightly less than the secondary
     {                                                                                     // maximum of the Lanczos C polynmoial
     	  starDegree = starDegreeSave;
@@ -1103,7 +1125,7 @@ for(long k = 0; k < threadCount; k++)
     orthogonalize(vArray);
 
     incrementTime("ortho");
-    incrementCount("ortho");
+    incrementCount("ortho",2);
 //
 //#############################################################################
 // 			Forming projection of operator onto working subspace (VtAV)
@@ -1146,6 +1168,8 @@ for(long k = 0; k < threadCount; k++)
     {
     maxResidual = std::max(maxResidual,subspaceResiduals[k]);
     }
+
+    residualHistory.push_back(maxResidual);
 
     incrementTime("eigenvalue");
     incrementCount("eigenvalue");
@@ -1256,6 +1280,36 @@ for(long k = 0; k < threadCount; k++)
     //
 
     if(subspaceIncrementSize == 0) {stopCheckValue = 0.0;}
+
+    // When using residual stop tolearnce force termination
+    // if residual is oscillating and has value < sqrt(subspaceTol)
+    //
+    long   rIndex; double residual2ndDiffA; double residual2ndDiffB;
+
+    if((this->useResidualStopCondition)&&(maxResidual < std::sqrt(subspaceTol)))
+    {
+    rIndex   = residualHistory.size() - 1;
+
+    if(rIndex > 3)
+    {
+      residual2ndDiffA = (residualHistory[rIndex-3] - 2.0*residualHistory[rIndex-2] + residualHistory[rIndex-1])/(std::abs(maxResidual));
+      residual2ndDiffB = (residualHistory[rIndex-2] - 2.0*residualHistory[rIndex-1] + residualHistory[rIndex])  /(std::abs(maxResidual));
+      if(residual2ndDiffA*residual2ndDiffB < 0.0)
+      {
+      stopCheckValue = 0.0;
+      if(verboseFlag)
+      {
+      std::cout << "Warning : Oscillatory residuals observed when max residual less than square root of subspace tolerance. " << std::endl;
+      std::cout << "          Rayleigh-Chebyshev subspace iteration stopped before residual terminaion criterion met. " << std::endl;
+      std::cout << "          Subspace tolerance specified :  " << subspaceTol << std::endl;
+      std::cout << "          Resididual obtained          :  " << maxResidual << std::endl;
+      std::cout << "Typical remediation involves either increasing subspace tolerance or buffer size." << std::endl;
+      std::cout <<  std::endl;
+      }
+      }
+    }
+
+    }
 
     //
     // Update cPoly parameters based upon the eigensystem computation.
@@ -1431,7 +1485,6 @@ for(long k = 0; k < threadCount; k++)
     	}
 
     	vArrayTmp.resize(subspaceSize);
-
     	VtAV.initialize(subspaceSize,subspaceSize);
     	VtAVeigVector.initialize(subspaceSize,subspaceSize);
     	VtAVeigValue.resize(subspaceSize,0.0);
@@ -1573,25 +1626,27 @@ for(long k = 0; k < threadCount; k++)
 
 void orthogonalize(std::vector< Vtype >& V)
 {
+    Dtype  rkj;
+    double rkk;
 	long subspaceSize = (long)V.size();
 #ifndef VBLAS_
 #ifdef _OPENMP
 	int threadNum;
 	for(long k = 1; k <= subspaceSize; k++)
     {
-        auto rkk          = std::sqrt(std::abs(V[k-1].dot(V[k-1])));
+        rkk  = std::sqrt(std::abs(V[k-1].dot(V[k-1])));
         V[k-1] *= 1.0/rkk;
 
 		#pragma omp parallel for \
-		private(threadNum) \
+		private(threadNum,rkj) \
 		schedule(static,1)
         for(long j = k+1; j <= subspaceSize; j++)
         {
         	threadNum = omp_get_thread_num();
-            auto rkj              =   V[j-1].dot(V[k-1]);
+            rkj                   =   V[j-1].dot(V[k-1]);
             MtVarray[threadNum]   =   V[k-1];
             MtVarray[threadNum]   *=  -rkj;
-            V[j-1]           +=   MtVarray[threadNum];
+            V[j-1]                +=   MtVarray[threadNum];
         }
     }
 #else

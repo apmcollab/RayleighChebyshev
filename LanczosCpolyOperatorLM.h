@@ -125,6 +125,31 @@ double  lambdaMax,  double shift, Otype& Op)
     this->Op                  = &Op;
 }
 
+
+// The following two member functions are used together to
+// associate an operator with a LanczosCpolyOperator class
+// instance separately from the Lanczos C polynomial
+// parameters.
+//
+void initialize(Otype& Op)
+{
+      lanczosCpoly.initialize();
+      this->Op = &Op;
+};
+
+void setLanczosCpolyParameters(long polyDegree, long repetitionFactor,
+double  lambdaMax, double shift)
+{
+	if(this->Op == nullptr)
+	{
+		std::string errMsg = "\n     LanczosCpolyOperatorLM : setting Lanczos C poly parameters before \n";
+	                errMsg += "\n    associating an operator with the instance. \n";
+		throw std::runtime_error(errMsg);
+	}
+
+	lanczosCpoly.initialize(polyDegree, repetitionFactor, lambdaMax, shift);
+}
+
 void initialize(long polyDegree, long repetitionFactor, 
 double  lambdaMax, double shift, Otype& Op)
 {
