@@ -156,10 +156,14 @@
 #include <cstdlib>
 #include <vector>
 #include <map>
+#include <algorithm>
 
 #include "ZHPEVX.h"
 #include "LapackMatrixCmplx16.h"
+
 #include "RCarray2d.h"
+#include "RC_Types.h"
+
 
 #include "LapackInterface/SCC_LapackMatrix.h"
 #include "LapackInterface/SCC_LapackMatrixRoutines.h"
@@ -179,7 +183,6 @@
 #define DEFAULT_POLY_DEGREE_MAX                200
 #define DEFAULT_FILTER_REPETITION_COUNT          1
 #define DEFAULT_USE_JACOBI_FLAG              false
-#define DEFAULT_USE_RESIDUAL_STOP_CONDITION  false
 #define RAYLEIGH_CHEBYSHEV_SMALL_TOL_      1.0e-11
 
 #ifdef TIMING_
@@ -194,7 +197,6 @@
 template <class Vtype, class Otype, class VRandomizeOpType, typename Dtype = double >
 class RayleighChebyshev
 {
-
     public : 
 
     RayleighChebyshev()
@@ -217,12 +219,21 @@ class RayleighChebyshev
     guardValue                 = 0.0;
     intervalStopConditionFlag  = false;
     hardIntervalStopFlag       = false;
-    useResidualStopCondition   = DEFAULT_USE_RESIDUAL_STOP_CONDITION;
+    stopCondition              = RC_Types::StopCondition::COMBINATION;
+
     nonRandomStartFlag         = false;
     fixedIterationCount        = false;
     maxInnerLoopCount          = DEFAULT_MAX_INNER_LOOP_COUNT;
 
+    finalData.clear();
+    countData.clear();
+
+    #ifdef TIMING_
+    timeValue.clear();
+    #endif
+
     eigVecResiduals.clear();
+
     #ifdef _OPENMP
     MtOpArray.clear();
     MtVarray.clear();
@@ -249,16 +260,66 @@ class RayleighChebyshev
     return relErrFactor;
 	}
 
+	void setStopCondition(std::string stopConditionStr)
+	{
+		std::transform(stopConditionStr.begin(), stopConditionStr.end(), stopConditionStr.begin(),[](unsigned char c)
+		{return  static_cast<char>(std::toupper(c));});
 
-    void setUseResidualStopCondition(bool val)
-    {
-    	useResidualStopCondition = val;
-    }
+		if(stopConditionStr == "COMBINATION")
+		{
+         setStopCondition(RC_Types::StopCondition::COMBINATION);
+		}
+		else if(stopConditionStr == "EIGENVALUE_ONLY")
+		{
+         setStopCondition(RC_Types::StopCondition::EIGENVALUE_ONLY);
+		}
+	    else if(stopConditionStr == "RESIDUAL_ONLY")
+		{
+         setStopCondition(RC_Types::StopCondition::RESIDUAL_ONLY);
+		}
+	    else if(stopConditionStr == "DEFAULT")
+		{
+         setStopCondition(RC_Types::StopCondition::COMBINATION);
+		}
+	    else
+	    {
+	    std::string errMsg  = "\nRayleighChebyshev Error : Stopping condition type specified not";
+	                errMsg +=  "\none of DEFAULT, COMBINATION, EIGENVALUE_ONLY,or RESIDUAL_ONLY.";
+	                errMsg +=  "\nOffending specification : " + stopConditionStr + "\n";
+	    throw std::runtime_error(errMsg);
+	    }
+	}
 
-    void clearUseResidualStopCondition()
-    {
-    	useResidualStopCondition = false;
-    }
+    void setStopCondition(RC_Types::StopCondition stopCondition)
+	{
+		switch (stopCondition)
+		{
+			case RC_Types::StopCondition::COMBINATION :
+			{
+				this->stopCondition = RC_Types::StopCondition::COMBINATION;
+			} break;
+			case RC_Types::StopCondition::EIGENVALUE_ONLY :
+			{
+				this->stopCondition = RC_Types::StopCondition::EIGENVALUE_ONLY;
+			} break;
+
+		    case RC_Types::StopCondition::RESIDUAL_ONLY :
+			{
+				this->stopCondition = RC_Types::StopCondition::RESIDUAL_ONLY;
+			} break;
+
+		    case RC_Types::StopCondition::DEFAULT:
+			{
+				this->stopCondition = RC_Types::StopCondition::COMBINATION;
+			} break;
+
+		    default :
+		   	{
+		   		this->stopCondition = RC_Types::StopCondition::COMBINATION;
+			}
+		}
+	}
+
 
     void setMaxInnerLoopCount(long val)
     {maxInnerLoopCount  = val;}
@@ -360,6 +421,23 @@ class RayleighChebyshev
     {
     	return  eigVecResiduals;
     }
+
+    std::map<std::string,double> getFinalData() const
+    {
+    	return finalData;
+    }
+
+    std::map<std::string,long> getCountData() const
+    {
+    	return countData;
+    }
+
+#ifdef TIMING_
+    std::map<std::string,double> getTimingData() const
+    {
+    	return timeValue;
+    }
+#endif
 
 //
 //  Member functions called to return eigensystem of operator projected onto
@@ -704,6 +782,7 @@ protected:
 
 
     this->setupCountData();
+    this->setupFinalData();
 
     /////////////////////////////////////////////////////////////////////
     // Compile with _TIMING defined for capturing timing data
@@ -804,6 +883,7 @@ protected:
     double starBound      = 0.0;
     double maxEigDiff     = 0.0;
     double maxResidual    = 0.0;
+    double maxGap         = 0.0;
     double stopCheckValue = 0.0;
     double eigDiffRatio   = 0.0;
 
@@ -942,7 +1022,7 @@ protected:
     maxInnerLoopCount  = fixedIterationCount;
     }
 
-    int  exitFlag = 0;
+    int    exitFlag = 0;
 
     long   applyCount            = 0;
     long   applyCountCumulative  = 0;
@@ -988,8 +1068,7 @@ protected:
     orthogonalize(vArray);
 
     incrementTime("ortho");
-    incrementCount("ortho");
-
+    incrementCount("ortho",2);
 
     lambdaStar     = maxEigValue;
     eigDiffRatio   = 1.0;
@@ -1003,6 +1082,10 @@ protected:
 
     applyCount = 0;
     residualHistory.clear();
+
+    maxGap      = 0.0;
+    maxResidual = 0.0;
+    maxEigDiff  = 0.0;
 
     while((stopCheckValue  > subspaceTol)&&(innerLoopCount < maxInnerLoopCount))
     {
@@ -1142,9 +1225,9 @@ for(long k = 0; k < threadCount; k++)
 //  Orthogonalize the subspace vectors using Modified Gram-Schmidt
 
     orthogonalize(vArray);
-
     incrementTime("ortho");
-    incrementCount("ortho",2);
+    incrementCount("ortho");
+
 //
 //#############################################################################
 // 			Forming projection of operator onto working subspace (VtAV)
@@ -1264,7 +1347,7 @@ for(long k = 0; k < threadCount; k++)
     } 
 
     double spectralRange = std::abs((lambdaMax-minEigValue));
-    double maxGap = 0.0;
+
     for(long i = 1; i < eigSubspaceCheckSize; i++)
     {
     maxGap = std::max(maxGap,std::abs(VtAVeigValue[i]-VtAVeigValue[i-1])/spectralRange);
@@ -1276,22 +1359,27 @@ for(long k = 0; k < threadCount; k++)
     innerLoopCount,starDegree,maxResidual,maxEigDiff,eigDiffRatio,maxGap);
     }
 
-    // When using the eigenvalue stop condition, to
-    // to insure that the eigenvector residuals are
-    // at least as accurate as the square root of the
-    // accuracy of the eigenvalues reset the
-    // stopCheckValue appropriately.
-    //
 
-    stopCheckValue = maxEigDiff;
-    if(maxResidual > sqrt(subspaceTol))
+
+    // Create value to determine when iteration should terminate
+
+
+    if(stopCondition == RC_Types::StopCondition::RESIDUAL_ONLY)
     {
     	stopCheckValue = maxResidual;
     }
-
-    if(this->useResidualStopCondition)
+    else if(stopCondition == RC_Types::StopCondition::EIGENVALUE_ONLY)
     {
+    	stopCheckValue = maxEigDiff;
+    }
+    else // Stop based up convergence of eigenvalues and residuals  < sqrt(subspaceTol)
+    {
+    	stopCheckValue = maxEigDiff;
+
+    	if(maxResidual > std::sqrt(subspaceTol))
+    	{
     	stopCheckValue = maxResidual;
+    	}
     }
 
     //
@@ -1305,7 +1393,7 @@ for(long k = 0; k < threadCount; k++)
     //
     long   rIndex; double residual2ndDiffA; double residual2ndDiffB;
 
-    if((this->useResidualStopCondition)&&(maxResidual < std::sqrt(subspaceTol)))
+    if((stopCondition == RC_Types::StopCondition::RESIDUAL_ONLY)&&(maxResidual < std::sqrt(subspaceTol)))
     {
     rIndex   = residualHistory.size() - 1;
 
@@ -1345,6 +1433,13 @@ for(long k = 0; k < threadCount; k++)
     innerLoopCount++;
     }
 
+    // Capture inner loop parameters
+
+    finalData["maxResidual"]           = std::max(maxResidual,finalData["maxResidual"]);
+	finalData["maxEigValueDifference"] = std::max(maxEigDiff,finalData["maxEigValueDifference"]);
+	finalData["maxRelEigValueGap"]     = std::max(maxGap,finalData["maxRelEigValueGap"]);
+
+
     applyCountCumulative  += applyCount;
 
     if(verboseFlag == 1)
@@ -1354,6 +1449,7 @@ for(long k = 0; k < threadCount; k++)
     printf(" Warning             : Maximal number of iterations taken before tolerance reached \n");
     printf(" Iterations taken    : %ld \n",innerLoopCount);
     printf(" Eig Diff Max        : %-10.5g \n",maxEigDiff);
+    printf(" Residual Max        : %-10.5g \n",maxResidual);
     printf(" Requested Tolerance : %-10.5g \n",subspaceTol);
     }
     }
@@ -1469,6 +1565,8 @@ for(long k = 0; k < threadCount; k++)
 
     starDegree = 1;
     starBound = maxEigValue;
+
+
 //
 //  Check for exceeding vector space dimension
 //  this step always reduces the subspace size, so the
@@ -1636,6 +1734,10 @@ for(long k = 0; k < threadCount; k++)
 
 
     if(foundSize >= 0) returnFlag =  foundSize;
+
+
+
+
     return returnFlag;
     }
 
@@ -1970,6 +2072,17 @@ double OrthogonalityCheck(std::vector< Vtype >& Avectors, bool printOrthoCheck =
     return orthoErrorMax;
 }
 
+void setupFinalData()
+{
+	finalData["maxResidual"]           = 0.0;
+	finalData["maxEigValueDifference"] = 0.0;
+	finalData["maxRelEigValueGap"]     = 0.0;
+    #ifdef TIMING_
+	finalData["totalTime"]               = 0.0;
+	#endif
+}
+
+
 void setupCountData()
 {
     countData["ortho"]       = 0;
@@ -2019,6 +2132,7 @@ void incrementTotalTime()
 	 #ifdef TIMING_
 	 globalTimer.stop();
 	 timeValue["totalTime"]  = globalTimer.getSecElapsedTime();
+	 finalData["totalTime"]  = timeValue["totalTime"];
      #endif
 }
 
@@ -2065,9 +2179,12 @@ void incrementTotalTime()
     bool           nonRandomStartFlag;
     bool         fixedIterationCount;
     long        filterRepetitionCount;
-    bool     useResidualStopCondition;
 
-    std::map<std::string,long> countData;
+    RC_Types::StopCondition stopCondition;
+
+    std::map<std::string,long>   countData;
+
+    std::map<std::string,double> finalData;
 
 	#ifdef TIMING_
     ClockIt        timer;
