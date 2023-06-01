@@ -158,13 +158,12 @@
 #include <map>
 #include <algorithm>
 
-
-#include "ZHPEVX.h"
-#include "LapackMatrixCmplx16.h"
-
-
 #include "LapackInterface/SCC_LapackMatrix.h"
 #include "LapackInterface/SCC_LapackMatrixRoutines.h"
+
+#include "LapackInterface/SCC_LapackMatrixCmplx16.h"
+#include "LapackInterface/SCC_ZHPEVX.h"
+
 
 #include "RCarray2d.h"
 #include "RC_Types.h"
