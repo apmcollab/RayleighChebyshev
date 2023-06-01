@@ -223,6 +223,7 @@ class RayleighChebyshev
     nonRandomStartFlag         = false;
     fixedIterationCount        = false;
     maxInnerLoopCount          = DEFAULT_MAX_INNER_LOOP_COUNT;
+    maxMinTol                  = DEFAULT_MAX_MIN_TOL;
 
     finalData.clear();
     countData.clear();
@@ -318,6 +319,12 @@ class RayleighChebyshev
 			}
 		}
 	}
+
+
+    void setMaxMinTolerance(double val = DEFAULT_MAX_MIN_TOL)
+    {
+    maxMinTol = val;
+    }
 
 
     void setMaxInnerLoopCount(long val)
@@ -664,8 +671,7 @@ class RayleighChebyshev
     std::vector<double>&  eigValues, std::vector < Vtype > & eigVectors)
     {
 
-    double minFinderTol              = subspaceTol;
-    if(minFinderTol > DEFAULT_MAX_MIN_TOL) {minFinderTol = DEFAULT_MAX_MIN_TOL;}
+    double minFinderTol = maxMinTol;
     
     double minEigValue;
     double maxEigValue;
@@ -698,8 +704,7 @@ class RayleighChebyshev
     Vtype& vStart,Otype& oP, VRandomizeOpType& randOp, std::vector<double>&  eigValues,
     std::vector < Vtype > & eigVectors)
     {
-    double minFinderTol  = subspaceTol;
-    if(minFinderTol > DEFAULT_MAX_MIN_TOL) {minFinderTol = DEFAULT_MAX_MIN_TOL;}
+    double minFinderTol  = maxMinTol;
     
     double minEigValue;
     double maxEigValue;
@@ -2170,8 +2175,10 @@ void incrementTotalTime()
     double    guardValue;                // Value of the guard eigenvalue.
     bool      intervalStopConditionFlag; // Converge based on value of guard eigenvalue
     bool      hardIntervalStopFlag;
+
     double    minEigValueEst;
     double    maxEigValueEst;
+    double    maxMinTol;
 
     long     minIntervalPolyDegreeMax;
     long            maxInnerLoopCount;
