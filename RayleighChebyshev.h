@@ -1751,15 +1751,13 @@ for(long k = 0; k < threadCount; k++)
 
 void orthogonalize(std::vector< Vtype >& V)
 {
-    Dtype  rkj;
-    double rkk;
 	long subspaceSize = (long)V.size();
 #ifndef VBLAS_
 #ifdef _OPENMP
 	int threadNum;
 	for(long k = 1; k <= subspaceSize; k++)
     {
-        rkk  = std::sqrt(std::abs(V[k-1].dot(V[k-1])));
+        auto rkk  = std::sqrt(std::abs(V[k-1].dot(V[k-1])));
         V[k-1] *= 1.0/rkk;
 
 		#pragma omp parallel for \
@@ -1768,7 +1766,7 @@ void orthogonalize(std::vector< Vtype >& V)
         for(long j = k+1; j <= subspaceSize; j++)
         {
         	threadNum = omp_get_thread_num();
-            rkj                   =   V[j-1].dot(V[k-1]);
+            auto rkj                   =   V[j-1].dot(V[k-1]);
             MtVarray[threadNum]   =   V[k-1];
             MtVarray[threadNum]   *=  -rkj;
             V[j-1]                +=   MtVarray[threadNum];
@@ -1878,12 +1876,11 @@ for(long j = indexB_start; j <= indexB_end; j++)
 }
 #ifdef _OPENMP
 #pragma omp parallel for \
-private(rkk) \
 schedule(static,1)
 #endif
 for(long k = indexA_start; k <= indexA_end; k++)
 {
-    rkk  =   Avectors[k].nrm2();
+    auto rkk  = Avectors[k].nrm2();
     Avectors[k].scal(1.0/rkk);
 }
 #endif
@@ -2025,6 +2022,7 @@ long residualCheckCount, std::vector<double>& eigVresiduals)
     eigVresiduals.resize(residualCheckCount,0.0);
 
 #ifdef _OPENMP
+    int threadNum;
     #pragma omp parallel for \
 	private(threadNum) \
 	schedule(static,1)
