@@ -1352,6 +1352,7 @@ for(long k = 0; k < threadCount; k++)
 
     double spectralRange = std::abs((lambdaMax-minEigValue));
 
+    maxGap = 0.0;
     for(long i = 1; i < eigSubspaceCheckSize; i++)
     {
     maxGap = std::max(maxGap,std::abs(VtAVeigValue[i]-VtAVeigValue[i-1])/spectralRange);
@@ -1761,7 +1762,7 @@ void orthogonalize(std::vector< Vtype >& V)
         V[k-1] *= 1.0/rkk;
 
 		#pragma omp parallel for \
-		private(threadNum,rkj) \
+		private(threadNum) \
 		schedule(static,1)
         for(long j = k+1; j <= subspaceSize; j++)
         {
@@ -1952,11 +1953,14 @@ schedule(static,1)
 void createEigenVectorsAndResiduals(RCarray2d<Dtype>& VtAVeigVector, std::vector< Vtype >& V,
 long residualCheckCount, std::vector<double>& eigVresiduals)
 {
+#ifdef _OPENMP
+	int threadNum;
+#endif
+
 	long subspaceSize = (long) V.size();
 
 #ifndef VBLAS_
 #ifdef _OPENMP
-	int threadNum;
     #pragma omp parallel for \
 	private(threadNum) \
 	schedule(static,1)
@@ -2022,7 +2026,6 @@ long residualCheckCount, std::vector<double>& eigVresiduals)
     eigVresiduals.resize(residualCheckCount,0.0);
 
 #ifdef _OPENMP
-    int threadNum;
     #pragma omp parallel for \
 	private(threadNum) \
 	schedule(static,1)
