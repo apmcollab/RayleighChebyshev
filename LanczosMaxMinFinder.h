@@ -319,10 +319,11 @@ VRandomizeOpType& randOp, double& minEigValue, double& maxEigValue)
         alphaK   = w.dot(v);
         alpha[k] = alphaK.real();
 
-        if(std::abs(alphaK.imag()) > (1.0 + alphaK.real())*hermitianErrorTol)
+        if(std::abs(alphaK.imag()) > (1.0 + std::abs(alphaK.real()))*hermitianErrorTol)
         {
         	std::string errMsg = "Lanzcos Max Min Finder : \n";
         	errMsg += "  Input complex valued operator not Hermitian. \n";
+        	errMsg += "  Complex component of dot product " + std::to_string(std::abs(alphaK.imag())) + "\n";
         	throw std::invalid_argument(errMsg);
         }
 
