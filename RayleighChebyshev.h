@@ -1272,7 +1272,8 @@ for(long k = 0; k < threadCount; k++)
     maxResidual = 0.0;
     for(size_t k = 0; k < subspaceResiduals.size(); k++)
     {
-    maxResidual = std::max(maxResidual,subspaceResiduals[k]);
+    relErrFactor = getRelErrorFactor(VtAVeigValue[k],subspaceTol);
+    maxResidual  = std::max(maxResidual,subspaceResiduals[k]/relErrFactor);
     }
 
     residualHistory.push_back(maxResidual);
