@@ -1091,6 +1091,8 @@ protected:
     maxResidual = 0.0;
     maxEigDiff  = 0.0;
 
+    long oscillationCount = 0;
+
     while((stopCheckValue  > subspaceTol)&&(innerLoopCount < maxInnerLoopCount))
     {
 //  
@@ -1409,6 +1411,9 @@ for(long k = 0; k < threadCount; k++)
       residual2ndDiffB = (residualHistory[rIndex-2] - 2.0*residualHistory[rIndex-1] + residualHistory[rIndex])  /(std::abs(maxResidual));
       if(residual2ndDiffA*residual2ndDiffB < 0.0)
       {
+      oscillationCount += 1;
+      if(oscillationCount > 5)
+      {
       stopCheckValue = 0.0;
       if(verboseFlag)
       {
@@ -1420,9 +1425,8 @@ for(long k = 0; k < threadCount; k++)
       std::cout <<  std::endl;
       }
       }
-    }
-
-    }
+      }
+    }}
 
     //
     // Update cPoly parameters based upon the eigensystem computation.

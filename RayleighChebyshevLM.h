@@ -220,7 +220,7 @@ class RayleighChebyshevLM
     intervalStopConditionFlag  = false;
     hardIntervalStopFlag       = false;
     stopCondition              = RC_Types::StopCondition::COMBINATION;
-
+    maxMinTol                  = DEFAULT_MAX_MIN_TOL;
 
     nonRandomStartFlag         = false;
     fixedIterationCount        = false;
@@ -665,9 +665,8 @@ class RayleighChebyshevLM
     std::vector<double>&  eigValues, std::vector < Vtype > & eigVectors)
     {
 
-    double minFinderTol              = subspaceTol;
-    if(minFinderTol > DEFAULT_MAX_MIN_TOL) {minFinderTol = DEFAULT_MAX_MIN_TOL;}
-    
+    double minFinderTol  = maxMinTol;
+
     double minEigValue;
     double maxEigValue;
 
@@ -699,8 +698,7 @@ class RayleighChebyshevLM
     Vtype& vStart,Otype& oP, VRandomizeOpType& randOp, std::vector<double>&  eigValues,
     std::vector < Vtype > & eigVectors)
     {
-    double minFinderTol  = subspaceTol;
-    if(minFinderTol > DEFAULT_MAX_MIN_TOL) {minFinderTol = DEFAULT_MAX_MIN_TOL;}
+    double minFinderTol  = maxMinTol;
     
     double minEigValue;
     double maxEigValue;
@@ -1068,6 +1066,8 @@ protected:
     maxResidual = 0.0;
     maxEigDiff  = 0.0;
 
+    long oscillationCount = 0;
+
     while((stopCheckValue  > subspaceTol)&&(innerLoopCount < maxInnerLoopCount))
     {
 //  
@@ -1226,7 +1226,8 @@ protected:
     maxResidual = 0.0;
     for(size_t k = 0; k < subspaceResiduals.size(); k++)
     {
-    maxResidual = std::max(maxResidual,subspaceResiduals[k]);
+    relErrFactor = getRelErrorFactor(VtAVeigValue[k],subspaceTol);
+    maxResidual  = std::max(maxResidual,subspaceResiduals[k]/relErrFactor);
     }
 
     residualHistory.push_back(maxResidual);
@@ -1305,6 +1306,8 @@ protected:
     } 
 
     double spectralRange = std::abs((lambdaMax-minEigValue));
+
+    maxGap = 0.0;
     for(long i = 1; i < eigSubspaceCheckSize; i++)
     {
     maxGap = std::max(maxGap,std::abs(VtAVeigValue[i]-VtAVeigValue[i-1])/spectralRange);
@@ -1359,6 +1362,9 @@ protected:
       residual2ndDiffB = (residualHistory[rIndex-2] - 2.0*residualHistory[rIndex-1] + residualHistory[rIndex])  /(std::abs(maxResidual));
       if(residual2ndDiffA*residual2ndDiffB < 0.0)
       {
+      oscillationCount += 1;
+      if(oscillationCount > 5)
+      {
       stopCheckValue = 0.0;
       if(verboseFlag)
       {
@@ -1370,9 +1376,8 @@ protected:
       std::cout <<  std::endl;
       }
       }
-    }
-
-    }
+      }
+    }}
 
     //
     // Update cPoly parameters based upon the eigensystem computation.
@@ -1821,12 +1826,11 @@ for(long j = indexB_start; j <= indexB_end; j++)
 }
 #ifdef _OPENMP
 #pragma omp parallel for \
-private(rkk) \
 schedule(static,1)
 #endif
 for(long k = indexA_start; k <= indexA_end; k++)
 {
-    rkk  =   Avectors[k].nrm2();
+    auto rkk  =   Avectors[k].nrm2();
     Avectors[k].scal(1.0/rkk);
 }
 #endif
@@ -2125,6 +2129,7 @@ void incrementTotalTime()
     bool      hardIntervalStopFlag;
     double    minEigValueEst;
     double    maxEigValueEst;
+    double    maxMinTol;
 
     long     minIntervalPolyDegreeMax;
     long            maxInnerLoopCount;

@@ -20,7 +20,7 @@
 /*
 #############################################################################
 #
-# Copyright 2012-2015 Chris Anderson
+# Copyright 2012-2023 Chris Anderson
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the Lesser GNU General Public License as published by
