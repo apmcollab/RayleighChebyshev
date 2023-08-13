@@ -320,7 +320,11 @@ class RayleighChebyshevLM
 		}
 	}
 
-
+    void setMaxMinTolerance(double val = DEFAULT_MAX_MIN_TOL)
+    {
+    maxMinTol = val;
+    }
+    
     void setMaxInnerLoopCount(long val)
     {maxInnerLoopCount  = val;}
 
@@ -1906,9 +1910,12 @@ long residualCheckCount, std::vector<double>& eigVresiduals)
 {
 	long subspaceSize = (long) V.size();
 
-#ifndef VBLAS_
 #ifdef _OPENMP
 	int threadNum;
+#endif
+
+#ifndef VBLAS_
+#ifdef _OPENMP
     #pragma omp parallel for \
 	private(threadNum) \
 	schedule(static,1)
