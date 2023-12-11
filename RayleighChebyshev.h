@@ -162,9 +162,10 @@
 #include "RC_Types.h"
 
 #include "LapackInterface/SCC_LapackMatrix.h"
-#include "LapackInterface/SCC_LapackMatrixCmplx16.h"
 #include "LapackInterface/SCC_LapackMatrixRoutines.h"
-#include "LapackInterface/SCC_ZHPEVX.h"
+
+#include "LapackInterface/SCC_LapackMatrixCmplx16.h"
+#include "LapackInterface/SCC_LapackMatrixRoutinesCmplx16.h"
 
 
 #include "LanczosCpoly.h"           // Chebyshev polynomial based filter polynomial
