@@ -12,9 +12,9 @@ OpenMP multi-thread usage is enabled by defining _OPENMP
 ### Prerequisites
 C++17, LAPACK
 ### Versioning
-Release : 2.0.0
+Release : 2.0.1
 ### Date
-May, 29, 2023
+September, 17, 2024
 ### Authors
 Chris Anderson
 ### License
