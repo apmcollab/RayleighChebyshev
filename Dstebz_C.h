@@ -6,10 +6,16 @@
 #include <exception>
 #include <stdexcept>
 
-#include "LapackInterface/SCC_LapackHeaders.h"
-    
 #ifndef DSTEBZ_RC_
 #define DSTEBZ_RC_
+
+#ifndef RC_WITHOUT_LAPACK_
+#include "LapackInterface/SCC_LapackHeaders.h"
+#else
+#pragma push_macro("EXTERNAL_LAPACK")
+#undef EXTERNAL_LAPACK
+#endif
+
 //
 // This file contains the header for dstebz.f in the LAPACK library. The external library
 // must be one associated with a 64 bit operating system where Fortran integers are
@@ -72,7 +78,7 @@
 #############################################################################
 */
 
-#ifndef INTERNAL_LAPACK_
+#ifndef EXTERNAL_LAPACK
 extern "C" int dstebz_(char* range, char* order, long *n, double *vl, double *vu, long *il, long *iu,
 double *abstol, double *d__, double *e, long *m, long *nsplit, double *w, long *iblock,
 long *isplit, double *work, long *iwork, long *info);
@@ -1530,6 +1536,10 @@ long dstebz_max(long a, long b)
 
 };
 
+
+#ifdef RC_WITHOUT_LAPACK_
+#pragma pop_macro("EXTERNAL_LAPACK")
+#endif
 
 #endif
 

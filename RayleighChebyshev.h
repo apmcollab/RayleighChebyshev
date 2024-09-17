@@ -119,7 +119,11 @@
 
 ---
 
-   External dependencies: LAPACK
+   External dependencies: Default use of LAPACK from SCC::LapackInterface component
+
+   LAPACK is necessary for complex Hermitian operators, for real symmetric
+   operators one can remove dependency on LAPACK and the SCC::LapackInterface component
+   by specifying the compiler define RC_WITHOUT_LAPACK_.
  
    Reference:
 
@@ -161,12 +165,13 @@
 #include "RCarray2d.h"
 #include "RC_Types.h"
 
+#ifndef RC_WITHOUT_LAPACK_
 #include "LapackInterface/SCC_LapackMatrix.h"
 #include "LapackInterface/SCC_LapackMatrixRoutines.h"
 
 #include "LapackInterface/SCC_LapackMatrixCmplx16.h"
 #include "LapackInterface/SCC_LapackMatrixRoutinesCmplx16.h"
-
+#endif
 
 #include "LanczosCpoly.h"           // Chebyshev polynomial based filter polynomial
 #include "LanczosCpolyOperator.h"   // Chebyshev polynomial based filter polynomial operator
@@ -182,7 +187,13 @@
 #define DEFAULT_MAX_INNER_LOOP_COUNT         10000
 #define DEFAULT_POLY_DEGREE_MAX                200
 #define DEFAULT_FILTER_REPETITION_COUNT          1
+
+#ifndef RC_WITHOUT_LAPACK_
 #define DEFAULT_USE_JACOBI_FLAG              false
+#else
+#define DEFAULT_USE_JACOBI_FLAG              true
+#endif
+
 #define RAYLEIGH_CHEBYSHEV_SMALL_TOL_      1.0e-11
 
 #ifdef TIMING_
@@ -192,6 +203,8 @@
 #ifdef _OPENMP
 #include <omp.h>
 #endif
+
+
 
 
 template <class Vtype, class Otype, class VRandomizeOpType, typename Dtype = double >
@@ -225,6 +238,8 @@ class RayleighChebyshev
     fixedIterationCount        = false;
     maxInnerLoopCount          = DEFAULT_MAX_INNER_LOOP_COUNT;
     maxMinTol                  = DEFAULT_MAX_MIN_TOL;
+
+    resultsStreamPtr          = nullptr;
 
     finalData.clear();
     countData.clear();
@@ -439,6 +454,17 @@ class RayleighChebyshev
     	return countData;
     }
 
+    void setResultsStream(std::ostream& S)
+    {
+    	resultsStreamPtr = &S;
+    }
+
+    void clearResultsStream()
+    {
+    	resultsStreamPtr = nullptr;
+    }
+
+
 #ifdef TIMING_
     std::map<std::string,double> getTimingData() const
     {
@@ -454,7 +480,6 @@ class RayleighChebyshev
     RCarray2d<double>& VtAVeigVector)
     {
     	long rowSize = VtAV.getRowSize();
-    	long colSize = VtAV.getColSize();
 
     	if(useJacobiFlag)
     	{
@@ -463,11 +488,12 @@ class RayleighChebyshev
     		jacobiMethod.getEigenSystem(VtAV.getDataPointer(), rowSize, &VtAVeigValue[0], VtAVeigVector.getDataPointer());
     	}
         else
+#ifndef RC_WITHOUT_LAPACK_
         {
-
     	/////////////////////////////////////////////////////////////////////////////
     	//     Calculation using LAPACK
     	////////////////////////////////////////////////////////////////////////////
+    	long colSize = VtAV.getColSize();
 
     	SCC::LapackMatrix VtAVmatrix;
     	SCC::LapackMatrix VtAVeigVectorMatrix;
@@ -492,11 +518,24 @@ class RayleighChebyshev
     	VtAVeigVectorMatrix(i,j) = VtAVeigVector(i,j) = VtAVeigVectorMatrix(i,j);
     	}}
     	}
+#else
+    	{
+    	std::string errMsg = "\nXXXX RayleighChebyshev Error XXXX";
+    	errMsg +=            "\nUse of Lapack solvers not supported without SCC::LapackInterface components\n";
+    	throw std::runtime_error(errMsg);
+    	}
+#endif
     }
 
     void computeVtVeigensystem(RCarray2d< std::complex<double> > & VtAV, std::vector<double>& VtAVeigValue,
     RCarray2d<  std::complex<double>  >& VtAVeigVector)
     {
+    	#ifdef RC_WITHOUT_LAPACK_
+    	std::string errMsg = "\nXXXX RayleighChebyshev Error XXXX";
+    	errMsg +=            "\nComplex Hermitian operators not supported without SCC::LapackInterface components\n";
+    	throw std::runtime_error(errMsg);
+        #else
+
     	long rowSize = VtAV.getRowSize();
     	long colSize = VtAV.getColSize();
 
@@ -527,7 +566,7 @@ class RayleighChebyshev
     	/////////////////////////////////////////////////////////////////////////////
     	//     Calculation using LAPACK
     	/////////////////////////////////////////////////////////////////////////////
-
+		#endif
     }
 
     void getMinEigAndMaxEig(double iterationTol,Vtype& vStart,Otype& oP, 
@@ -543,6 +582,11 @@ class RayleighChebyshev
     if(verboseFlag) 
     {lanczosMaxMinFinder.setVerboseFlag();}
 
+    if(resultsStreamPtr)
+    {
+    lanczosMaxMinFinder.setResultsStream(*resultsStreamPtr);
+    }
+
     // Specify accurate estimates of largest and smallest
 
     lanczosMaxMinFinder.setMinMaxEigStopCondition();
@@ -550,9 +594,14 @@ class RayleighChebyshev
     lanczosMaxMinFinder.getMinMaxEigenvalues(iterationTol,vStart,w,wTmp,oP,
     randOp,minEigValue,maxEigValue);
 
-    if(verboseFlag) 
-    {printf("Minimum_Eigenvalue : %10.5g  \nMaximum_Eigenvalue : %10.5g \n",minEigValue,
-     maxEigValue);}
+    char charBuf[256];
+    if(verboseFlag)
+    {
+    snprintf(charBuf,256,"\nEstMinimum_Eigenvalue : %15.10g  \nEstMaximum_Eigenvalue : %15.10g \n",minEigValue,maxEigValue);
+    std::cout << charBuf << std::endl;
+    if(resultsStreamPtr){*resultsStreamPtr << charBuf << std::endl; }
+    }
+
 
     minEigValueEst  = minEigValue;
     maxEigValueEst  = maxEigValue;
@@ -575,6 +624,11 @@ class RayleighChebyshev
     if(verboseFlag )
     {lanczosMaxMinFinder.setVerboseFlag();}
 
+    if(resultsStreamPtr)
+    {
+    lanczosMaxMinFinder.setResultsStream(*resultsStreamPtr);
+    }
+
     // Specify accurate estimates of largest. Here we use the
     // fact that the core procedure only requires a good upper
     // bound and a reasonably good lower bound. 
@@ -590,9 +644,13 @@ class RayleighChebyshev
     lanczosMaxMinFinder.getMinMaxEigenvalues(iterationTol,vStart,w,wTmp,oP,
     randOp,minEigValue,maxEigValue);
 
+    char charBuf[256];
     if(verboseFlag)
-    {printf("Minimum_Eigenvalue : %10.5g  \nMaximum_Eigenvalue : %10.5g \n",minEigValue,
-     maxEigValue);}
+    {
+    snprintf(charBuf,256,"\nEstMinimum_Eigenvalue : %15.10g  \nEstMaximum_Eigenvalue : %15.10g \n",minEigValue,maxEigValue);
+    std::cout << charBuf << std::endl;
+    if(resultsStreamPtr){*resultsStreamPtr << charBuf << std::endl; }
+    }
 
     minEigValueEst  = minEigValue;
     maxEigValueEst  = maxEigValue;
@@ -1031,11 +1089,22 @@ protected:
 
     long   applyCount            = 0;
     long   applyCountCumulative  = 0;
+
+    char charBuf[256];    // To enable use of C-style formatted output
+    std::string oString;  // To enable use of C-style formatted output
 //
 ////////////////////////////////////////////////////////////
 //                Main loop
 ////////////////////////////////////////////////////////////
 //
+
+    if(verboseFlag)
+    {
+    snprintf(charBuf,256,"\nRayleighChebyshev eigensystem computation \n");
+    std::cout << charBuf << std::endl;
+    if(resultsStreamPtr){*resultsStreamPtr << charBuf << std::endl; }
+    }
+
     while(exitFlag == 0)
     {
 //
@@ -1287,17 +1356,21 @@ for(long k = 0; k < threadCount; k++)
 //
 /////////////////////////////////////////////////////////////////////////////
 
+
     if(verboseSubspaceFlag)
     {
-    printf("XXXX Subspace Eigs XXXX \n");
+    oString.clear();
+    snprintf(charBuf,256,"XXXX Subspace Eigs XXXX \n"); oString = charBuf;
     for(long i = 0; i < subspaceSize; i++)
     {
-    printf("%3ld : %+10.5e \n",i,VtAVeigValue[i]);
+    snprintf(charBuf,256,"%3ld : %+10.5e \n",i,VtAVeigValue[i]); oString += charBuf;
     }
-    printf("\n");
-    printf("Shift      : %10.5e MaxEigValue : %10.5e \n ",shift,maxEigValue);
-    printf("LambdaStar : %10.5e StarBound   : %10.5e StarDegree : %3ld \n",lambdaStar,starBound,starDegree); 
-    printf("XXXXXXXXXXXXXXXXXXXXXXX \n");
+    snprintf(charBuf,256,"\n");
+    snprintf(charBuf,256,"Shift      : %10.5e MaxEigValue : %10.5e \n ",shift,maxEigValue); oString += charBuf;
+    snprintf(charBuf,256,"LambdaStar : %10.5e StarBound   : %10.5e StarDegree : %3ld \n",lambdaStar,starBound,starDegree); oString += charBuf;
+    snprintf(charBuf,256,"XXXXXXXXXXXXXXXXXXXXXXX \n"); oString += charBuf;
+    std::cout << oString << std::endl;
+    if(resultsStreamPtr){ *resultsStreamPtr << oString << std::endl;}
     }
  
 //
@@ -1362,13 +1435,13 @@ for(long k = 0; k < threadCount; k++)
     maxGap = std::max(maxGap,std::abs(VtAVeigValue[i]-VtAVeigValue[i-1])/spectralRange);
     }
 
-    if(verboseFlag == 1)
+    if(verboseFlag)
     {
-    printf("%-5ld : Degree %-3ld  Residual Max: %-10.5g  Eig Diff Max: %-10.5g  Eig Conv Factor: %-10.5g Max Gap %-10.5g \n",
+    snprintf(charBuf,256,"%-5ld : Degree %-3ld  Residual Max: %-10.5g  Eig Diff Max: %-10.5g  Eig Conv Factor: %-10.5g Max Gap %-10.5g",
     innerLoopCount,starDegree,maxResidual,maxEigDiff,eigDiffRatio,maxGap);
+    std::cout << charBuf << std::endl;
+    if(resultsStreamPtr){*resultsStreamPtr << charBuf << std::endl; }
     }
-
-
 
     // Create value to determine when iteration should terminate
 
@@ -1416,14 +1489,17 @@ for(long k = 0; k < threadCount; k++)
       if(oscillationCount > 5)
       {
       stopCheckValue = 0.0;
+
       if(verboseFlag)
       {
-      std::cout << "Warning : Oscillatory residuals observed when max residual less than square root of subspace tolerance. " << std::endl;
-      std::cout << "          Rayleigh-Chebyshev subspace iteration stopped before residual terminaion criterion met. " << std::endl;
-      std::cout << "          Subspace tolerance specified :  " << subspaceTol << std::endl;
-      std::cout << "          Resididual obtained          :  " << maxResidual << std::endl;
-      std::cout << "Typical remediation involves either increasing subspace tolerance or buffer size." << std::endl;
-      std::cout <<  std::endl;
+      oString.clear();
+      snprintf(charBuf,256,"Warning : Oscillatory residuals observed when max residual less than square root of subspace tolerance.\n"); oString = charBuf;
+      snprintf(charBuf,256,"          RayleighChebyshev subspace iteration stopped before residual termination criterion met.\n"); oString += charBuf;
+      snprintf(charBuf,256,"          Subspace tolerance specified :  %10.5e \n",subspaceTol); oString += charBuf;
+      snprintf(charBuf,256,"          Resididual obtained          :  %10.5e \n",maxResidual); oString += charBuf;
+      snprintf(charBuf,256,"Typical remediation involves either increasing subspace tolerance or buffer size.\n"); oString += charBuf;
+      std::cout << oString << std::endl;
+      if(resultsStreamPtr){ *resultsStreamPtr << oString << std::endl;}
       }
       }
       }
@@ -1457,11 +1533,14 @@ for(long k = 0; k < threadCount; k++)
     {
     if((not fixedIterationCount) && (innerLoopCount >= maxInnerLoopCount))
     {
-    printf(" Warning             : Maximal number of iterations taken before tolerance reached \n");
-    printf(" Iterations taken    : %ld \n",innerLoopCount);
-    printf(" Eig Diff Max        : %-10.5g \n",maxEigDiff);
-    printf(" Residual Max        : %-10.5g \n",maxResidual);
-    printf(" Requested Tolerance : %-10.5g \n",subspaceTol);
+    oString.clear();
+    snprintf(charBuf,256," Warning             : Maximal number of iterations taken before tolerance reached \n"); oString = charBuf;
+    snprintf(charBuf,256," Iterations taken    : %ld \n",innerLoopCount);  oString += charBuf;
+    snprintf(charBuf,256," Eig Diff Max        : %-10.5g \n",maxEigDiff);  oString += charBuf;
+    snprintf(charBuf,256," Residual Max        : %-10.5g \n",maxResidual); oString += charBuf;
+    snprintf(charBuf,256," Requested Tolerance : %-10.5g \n",subspaceTol); oString += charBuf;
+    std::cout << oString << std::endl;
+    if(resultsStreamPtr){*resultsStreamPtr << oString << std::endl;}
     }
     }
 
@@ -1516,9 +1595,12 @@ for(long k = 0; k < threadCount; k++)
         }
     
         foundSize += foundCount; 
-        if(verboseFlag == 1)
+
+        if(verboseFlag)
         {
-        printf("Found Count: %3ld Largest Eig: %-9.5g Lambda Bound: %-9.5g \n",foundSize, eigValues[foundSize-1], lambdaMax);
+        	snprintf(charBuf,256,"\nFound Count: %3ld Largest Eig Found: %-20.15g Lambda Bound: %-20.15g \n",foundSize, eigValues[foundSize-1], lambdaMax);
+        	std::cout << charBuf << std::endl;
+        	if(resultsStreamPtr){*resultsStreamPtr << charBuf << std::endl; }
         }
     }
 
@@ -1716,27 +1798,39 @@ for(long k = 0; k < threadCount; k++)
 
 
     this->incrementTotalTime();
+
+
+	if(verboseFlag)
+	{
+	snprintf(charBuf,256,"Total Found Count: %3ld Largest Eig Found: %-20.15g Lambda Bound: %-20.15g \n",foundSize, eigValues[foundSize-1], lambdaMax);
+ 	std::cout << charBuf << std::endl;
+	if(resultsStreamPtr){*resultsStreamPtr << charBuf << std::endl; }
+	}
+
     if(eigDiagnosticsFlag == 1)
     {
-    	printf("\nXXXX Rayleigh-Chebyshev Diagnostics XXXXX \n");
+    	oString.clear();
+    	snprintf(charBuf,256,"\nXXXX RayleighChebyshev Diagnostics XXXXX \n"); oString = charBuf;
 
         #ifdef _OPENMP
-        printf("XXXX --- Using OpenMP Constructs  --- XXXX\n");
+        snprintf(charBuf,256,"XXXX --- Using OpenMP Constructs  --- XXXX\n");   oString += charBuf;
 		#endif
 
-        printf("\n");
-        printf("Total_Iterations        : %-ld   \n",applyCountCumulative);
-        printf("Total_OpApply           : %-ld   \n",countData["OpApply"]);
-        printf("Total_SubspaceEig       : %-ld   \n",countData["eigenvalue"]);
-        printf("Total_Orthogonalization : %-ld   \n",countData["ortho"]);
+        snprintf(charBuf,256,"\n");
+        snprintf(charBuf,256,"Total_Iterations        : %-ld   \n",applyCountCumulative);   oString += charBuf;
+        snprintf(charBuf,256,"Total_OpApply           : %-ld   \n",countData["OpApply"]);   oString += charBuf;
+        snprintf(charBuf,256,"Total_SubspaceEig       : %-ld   \n",countData["eigenvalue"]);oString += charBuf;
+        snprintf(charBuf,256,"Total_Orthogonalization : %-ld   \n",countData["ortho"]);     oString += charBuf;
 
     	#ifdef TIMING_
-        printf("TotalTime_Sec : %10.5f \n",timeValue["totalTime"]);
-        printf("OrthoTime_Sec : %10.5f \n",timeValue["ortho"]);
-        printf("ApplyTime_Sec : %10.5f \n",timeValue["OpApply"]);
-        printf("EigTime_Sec   : %10.5f \n",timeValue["eigenvalue"]);
+        snprintf(charBuf,256,"TotalTime_Sec : %10.5f \n",timeValue["totalTime"]); oString += charBuf;
+        snprintf(charBuf,256,"OrthoTime_Sec : %10.5f \n",timeValue["ortho"]);     oString += charBuf;
+        snprintf(charBuf,256,"ApplyTime_Sec : %10.5f \n",timeValue["OpApply"]);   oString += charBuf;
+        snprintf(charBuf,256,"EigTime_Sec   : %10.5f \n",timeValue["eigenvalue"]);oString += charBuf;
         #endif
 
+        std::cout << oString << std::endl;
+        if(resultsStreamPtr){*resultsStreamPtr << oString << std::endl;}
     }
 
 
@@ -2176,8 +2270,10 @@ void incrementTotalTime()
     JacobiDiagonalizer jacobiMethod;
     bool              useJacobiFlag;
 
+    #ifndef RC_WITHOUT_LAPACK_
     SCC::DSYEV                dsyev;
     SCC::ZHPEVX              zhpevx;
+    #endif
 
     double    guardValue;                // Value of the guard eigenvalue.
     bool      intervalStopConditionFlag; // Converge based on value of guard eigenvalue
@@ -2198,6 +2294,8 @@ void incrementTotalTime()
     std::map<std::string,long>   countData;
 
     std::map<std::string,double> finalData;
+    
+    std::ostream* resultsStreamPtr;
 
 	#ifdef TIMING_
     ClockIt        timer;

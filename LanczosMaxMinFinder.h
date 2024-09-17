@@ -136,6 +136,8 @@ void initialize()
     minEigFlag = true;
 
     hermitianErrorTol = LANCZOS_MAX_MIN_FINDER_HERMITIAN_ERROR_TOL;
+
+    resultsStreamPtr = nullptr;
 }
 
 void initialize(long maxIterCount)
@@ -154,6 +156,8 @@ void initialize(long maxIterCount)
     minEigFlag = true;
 
     hermitianErrorTol = LANCZOS_MAX_MIN_FINDER_HERMITIAN_ERROR_TOL;
+
+    resultsStreamPtr = nullptr;
 }
 
 double getRelErrorFactor(double val, double tol)
@@ -203,6 +207,17 @@ void setDiagnosticExactValues(double exactMin,double exactMax)
     exactDiagnosticFlag        = 1;
 	setVerboseFlag();
 }
+
+void setResultsStream(std::ostream& S)
+{
+    	resultsStreamPtr = &S;
+}
+
+void clearResultsStream()
+{
+    	resultsStreamPtr = nullptr;
+}
+
 
 long getIterationCount()
 {
@@ -281,13 +296,26 @@ VRandomizeOpType& randOp, double& minEigValue, double& maxEigValue)
 
     k = 0;
 
+    char charBuf[256];
     if((verboseFlag == 1)&&(exactDiagnosticFlag == 1))
     {
-    printf("      Evalue        Exact Error   Est.  Error      Rate         Evalue        Exact Error   Est.  Error      Rate \n");
+    snprintf(charBuf,256,"RayleighChebyshev spectral bounds estimation using standard Lanczos ");
+    std::cout << charBuf << std::endl;
+    if(resultsStreamPtr){*resultsStreamPtr << charBuf << std::endl;}
+
+    snprintf(charBuf,256,"      Max_Evalue    Exact Error   Est.  Error      Rate        Min_Evalue    Exact Error   Est.  Error      Rate");
+    std::cout << charBuf << std::endl;
+    if(resultsStreamPtr){*resultsStreamPtr << charBuf << std::endl;}
     }
     else if(verboseFlag == 1)
     {
-    printf("      Evalue       Est.  Error    Rate       Evalue       Est.  Error      Rate \n");
+    snprintf(charBuf,256,"RayleighChebyshev spectral bounds estimation using standard Lanczos ");
+    std::cout << charBuf << std::endl;
+    if(resultsStreamPtr){*resultsStreamPtr << charBuf << std::endl;}
+
+    snprintf(charBuf,256,"      Max_Evalue   Est. Error     Rate        Min_Evalue   Est. Error       Rate");
+    std::cout << charBuf << std::endl;
+    if(resultsStreamPtr){*resultsStreamPtr << charBuf << std::endl;}
     }
 
 
@@ -456,17 +484,24 @@ VRandomizeOpType& randOp, double& minEigValue, double& maxEigValue)
         minError = std::abs(minExact - lanczosMin)/relErrFactor;
         }
 
+
+        char charBuf[256];
+
         if((verboseFlag == 1)&&(exactDiagnosticFlag == 1))
         {
-        printf("%4ld %10.6e %10.6e %10.6e %10.6e %10.6e  %10.6e %10.6e %10.6e\n",k,
+        snprintf(charBuf,256,"%4ld %10.6e %10.6e %10.6e %10.6e %10.6e  %10.6e %10.6e %10.6e",k,
         lanczosMax, maxError, maxDiffError,rateEigMax,
         lanczosMin, minError, minDiffError,rateEigMin);
+        std::cout << charBuf << std::endl;
+        if(resultsStreamPtr){*resultsStreamPtr << charBuf << std::endl;}
         }
         else if(verboseFlag == 1)
         {
-        printf("%4ld %10.6e %10.6e %10.6e %10.6e %10.6e  %10.6e \n",k,
+        snprintf(charBuf,256,"%4ld %10.6e %10.6e %10.6e %10.6e %10.6e  %10.6e",k,
         lanczosMax, maxDiffError,rateEigMax,
         lanczosMin,minDiffError,rateEigMin);
+        std::cout << charBuf << std::endl;
+        if(resultsStreamPtr){*resultsStreamPtr << charBuf << std::endl;}
         }
 
         // Set exit flag here based on which eigenvalues we are
@@ -568,6 +603,8 @@ double getMaxEigenvalue(double errorTolerance, Vtype& v, Vtype& w, Vtype& wTmp, 
     Dstebz_C        triEigRoutine;
 
     double hermitianErrorTol;
+
+    std::ostream* resultsStreamPtr;
 
 
 

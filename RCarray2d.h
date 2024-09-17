@@ -6,7 +6,7 @@
 //
 // Class RCarray2d is a templated container class for storing a 2D array
 // of specified data type by columns. This class is used by the
-// RayleighChebeyshev eigensystem procedure.
+// RayleighChebeyshev eigensystem procedures.
 //
 // Since minimal functionality is required for the 2D array in the
 // RayleighChebyshev procedure, this class is used to avoid
