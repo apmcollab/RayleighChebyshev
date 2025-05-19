@@ -1430,10 +1430,12 @@ for(long k = 0; k < threadCount; k++)
     double spectralRange = std::abs((lambdaMax-minEigValue));
 
     maxGap = 0.0;
+    if(spectralRange > std::abs(lambdaMax)*1.0e-12)
+    {
     for(long i = 1; i < eigSubspaceCheckSize; i++)
     {
     maxGap = std::max(maxGap,std::abs(VtAVeigValue[i]-VtAVeigValue[i-1])/spectralRange);
-    }
+    }}
 
     if(verboseFlag)
     {
@@ -1463,6 +1465,10 @@ for(long k = 0; k < threadCount; k++)
     	stopCheckValue = maxResidual;
     	}
     }
+
+    // If maxGap == 0 matrix is multiple of identity
+
+    if(maxGap == 0.0) {stopCheckValue = maxResidual;}
 
     //
     // Force termination if we've filled out the subspace
@@ -1641,12 +1647,13 @@ for(long k = 0; k < threadCount; k++)
 
     if(hardIntervalStopFlag)
 	{
-    if(guardValue > lambdaMax)     {exitFlag = 1;}
+    if((guardValue > lambdaMax)&&(maxGap != 0.0))  {exitFlag = 1;}
 	}
     else
     {
     if(vtvEigCheck >= 10.0*subspaceTol)     {exitFlag = 1;}
     }
+
 
     //
     // Shifting minEigenValue 

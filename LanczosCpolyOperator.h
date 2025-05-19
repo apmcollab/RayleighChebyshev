@@ -215,7 +215,7 @@ void setRepetitionFactor(long repetitionFactor)
 //
 // If 
 // lambdaMax      = maximal  eigenvalue of A
-// sigma          = applied shift with the constraint that sigma + lambda >= 0 for all lambda
+// sigma          = applied shift with the constraint that sigma + lambda > 0 for all lambda
 // A'             = (A + sigma)/[(lambdaMax + sigma)/UpperXstar]
 //
 // The apply(Vtype& v) operator of this class applies the operator
@@ -238,6 +238,14 @@ void apply(Vtype& v)
     double rhoB       = lambdaMax/starFactor + shift/starFactor;
     double gamma1     = -2.0/(rhoB - 2.0*shift);
     double gamma2     =  2.0 - (4.0*shift)/rhoB;
+
+    // No gap : matrix is a multiple of the identity
+
+    if(std::abs(shift + lambdaMax) <= 1.0e-15*std::abs(lambdaMax))
+    {
+    	Op->apply(v);
+    	return;
+    }
 
     if(vnPtr   == nullptr) {vnPtr   = new Vtype(v);}
     if(vnm1Ptr == nullptr) {vnm1Ptr = new Vtype(v);}
@@ -302,6 +310,16 @@ void apply(Vtype& v)
     double rhoB       = lambdaMax/starFactor + shift/starFactor;
     double gamma1     = -2.0/(rhoB - 2.0*shift);
     double gamma2     =  2.0 - (4.0*shift)/rhoB;
+
+    // No gap so matrix is a multiple of the identity so multiplication
+    // by operator.
+
+    if(std::abs(shift + lambdaMax) <= 1.0e-15*std::abs(lambdaMax))
+    {
+    	Op->apply(v);
+    	return;
+    }
+
 
     if(vnPtr   == nullptr) {vnPtr   = new Vtype(v);}
     if(vnm1Ptr == nullptr) {vnm1Ptr = new Vtype(v);}

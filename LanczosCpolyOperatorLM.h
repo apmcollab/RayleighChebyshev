@@ -206,6 +206,15 @@ void apply(std::vector<Vtype>& vArray)
     double gamma1     = -2.0/(rhoB - 2.0*shift);
     double gamma2     =  2.0 - (4.0*shift)/rhoB;
 
+
+    // No gap : matrix is a multiple of the identity
+
+    if(std::abs(shift + lambdaMax) <= 1.0e-15*std::abs(lambdaMax))
+    {
+    	Op->apply(vArray);
+    	return;
+    }
+
     long vSize = (long)vArray.size();
 
     vn.resize(vSize);
@@ -323,6 +332,14 @@ void apply(std::vector<Vtype>& vArray)
     double rhoB       = lambdaMax/starFactor + shift/starFactor;
     double gamma1     = -2.0/(rhoB - 2.0*shift);
     double gamma2     =  2.0 - (4.0*shift)/rhoB;
+
+    // No gap : matrix is a multiple of the identity
+
+    if(std::abs(shift + lambdaMax) <= 1.0e-15*std::abs(lambdaMax))
+    {
+    	Op->apply(vArray);
+    	return;
+    }
 
     long vSize = (long)vArray.size();
 

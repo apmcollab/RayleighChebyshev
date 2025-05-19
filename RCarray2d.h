@@ -110,6 +110,14 @@ public:
     else{arrayData = A.arrayData;}
     }
 
+    void setToValue(Dtype val)
+    {
+    	for(size_t i = 0; i < arrayData.size(); i++)
+    	{
+    		arrayData[i] = val;
+    	}
+    }
+
     Dtype* getDataPointer(){return arrayData.data();};
 
     const Dtype* getDataPointer() const {return arrayData.data();};
