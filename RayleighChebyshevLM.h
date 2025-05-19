@@ -2081,11 +2081,8 @@ long residualCheckCount, std::vector<double>& eigVresiduals)
 #else
     for(long k = 0; k < residualCheckCount; k++)
     {
-        // Compute residuals
-
         vTemp               = V[k];
-        OpPtr->apply(vTemp);
-        vArrayTmp[k]        *= VtAVeigValue[k];
+        vTemp              *= VtAVeigValue[k];
         vTemp               -= vArrayTmp[k];
         eigVresiduals[k]     = vTemp.norm2();
     }
