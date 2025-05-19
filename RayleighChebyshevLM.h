@@ -1967,8 +1967,8 @@ schedule(static,1)
         OpPtr->apply(vTemp);
         for(long j = i; j < subspaceSize; j++)
         {
-        VtAV(j,i) = V[j].dot(vTemp);
-        VtAV(i,j) = VtAV(j,i);
+        H(j,i) = V[j].dot(vTemp);
+        H(i,j) = H(j,i);
         }
     }
 #endif

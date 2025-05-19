@@ -784,6 +784,7 @@ class RayleighChebyshev
     //
     // Increase maxEigValue slightly to be on the safe side if we don't have
     // the identity.
+
     //
     if(std::abs(maxEigValue - minEigValue) > 1.0e-12)
     {
@@ -2037,8 +2038,8 @@ schedule(static,1)
         OpPtr->apply(vTemp);
         for(long j = i; j < subspaceSize; j++)
         {
-        VtAV(j,i) = V[j].dot(vTemp);
-        VtAV(i,j) = VtAV(j,i);
+        H(j,i) = V[j].dot(vTemp);
+        H(i,j) = H(j,i);
         }
     }
 #endif
