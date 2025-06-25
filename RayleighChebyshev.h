@@ -161,6 +161,7 @@
 #include <vector>
 #include <map>
 #include <algorithm>
+#include <stdexcept>
 
 #include "RCarray2d.h"
 #include "RC_Types.h"
@@ -1564,6 +1565,7 @@ for(long k = 0; k < threadCount; k++)
 
     // Check for eigenvalues less than maximal eigenvalue
 
+    long lamdaMaxExeededCount = 0;
     for(long i = 0; i < checkIndexCount; i++)
     {
     vtvEig  = VtAVeigValue[i];
@@ -1571,7 +1573,23 @@ for(long k = 0; k < threadCount; k++)
 
     vtvEigCheck = (vtvEig - lambdaMax)/relErrFactor; // Signed value is important here
 
-    if(vtvEigCheck < subspaceTol) foundCount++;
+    if(vtvEigCheck < subspaceTol) {foundCount++;}
+    else                          {lamdaMaxExeededCount++;}
+    }
+
+    if(lamdaMaxExeededCount == checkIndexCount)
+    {
+    oString.clear();
+    snprintf(charBuf,256," Rayleigh-Chebyshev Error \n All converged eigenvalues exceed initial estimated maximal eigenvalue. \n"); oString = charBuf;
+    snprintf(charBuf,256," The problem is typically caused by inaccurate initial spectral bounds estimation. \n");  oString += charBuf;
+    snprintf(charBuf,256," Choose spectralBoundsTol smaller and possibly increase maxSpectralBoundsIter. \n");  oString += charBuf;
+    snprintf(charBuf,256," Estimated lambdaMax      : %-15.10g \n",lambdaMax);  oString += charBuf;
+    for(long k = 0; k < checkIndexCount; k++)
+    {
+    snprintf(charBuf,256," Computed eigenvalue      : %-ld : %-15.10g \n",k,VtAVeigValue[k]);  oString += charBuf;
+    }
+    if(resultsStreamPtr){*resultsStreamPtr << oString << std::endl;}
+    throw std::runtime_error(oString);
     }
 
 
