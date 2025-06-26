@@ -248,6 +248,18 @@ void setHermitianErrorTol(double val)
 void getMinMaxEigenvalues(double errorTolerance, Vtype& v, Vtype& w, Vtype& wTmp, Otype &oP, 
 VRandomizeOpType& randOp, double& minEigValue, double& maxEigValue)
 {
+	// Using same stopping tolerance for both minimum and maximum eigenvalue approximation
+
+	if(errorTolerance > 0.01) {errorTolerance = 0.01;}
+
+	double maxEigTol = errorTolerance;
+	double minEigTol = errorTolerance;
+
+	getMinMaxEigenvalues(errorTolerance, v, w, wTmp, oP, randOp, minEigValue, maxEigValue)
+}
+void getMinMaxEigenvalues(double maxEigTol,double minEigTol, Vtype& v, Vtype& w, Vtype& wTmp, Otype &oP,
+VRandomizeOpType& randOp, double& minEigValue, double& maxEigValue)
+{
 	double vNorm;
 
 	std::complex<double> alphaK;
@@ -257,10 +269,15 @@ VRandomizeOpType& randOp, double& minEigValue, double& maxEigValue)
 
     // impose a minimimal degree of accuracy
 
-    if(errorTolerance > 0.01) errorTolerance = 0.01; 
 
-    double tol       = errorTolerance;
-    if(tol < LANCZOS_SMALL_TOL_ ) { tol = LANCZOS_SMALL_TOL_; }
+
+    if(maxEigTol > 0.01) {maxEigTol = 0.01;}
+    if(minEigTol > 0.01) {minEigTol = 0.01;}
+
+    if(maxEigTol < LANCZOS_SMALL_TOL_ ) { maxEigTol = LANCZOS_SMALL_TOL_; }
+    if(minEigTol < LANCZOS_SMALL_TOL_ ) { minEigTol = LANCZOS_SMALL_TOL_; }
+
+
     double relErrFactor;
 
     // Complex Hermitian test error tolerance
