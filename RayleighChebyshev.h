@@ -570,8 +570,19 @@ class RayleighChebyshev
 		#endif
     }
 
+
     void getMinEigAndMaxEig(double iterationTol,Vtype& vStart,Otype& oP, 
     VRandomizeOpType& randOp, double&  minEigValue, 
+    double& maxEigValue)
+    {
+    	double maxEigEstimationTol = iterationTol;
+    	double minEigEstimationTol = iterationTol;
+    	getMinEigAndMaxEig(minEigEstimationTol,maxEigEstimationTol,vStart,oP, randOp, minEigValue, maxEigValue);
+    }
+
+
+    void getMinEigAndMaxEig(double minEigEstimationTol,double maxEigEstimationTol,Vtype& vStart,Otype& oP,
+    VRandomizeOpType& randOp, double&  minEigValue,
     double& maxEigValue)
     {
     //
@@ -592,7 +603,7 @@ class RayleighChebyshev
 
     lanczosMaxMinFinder.setMinMaxEigStopCondition();
 
-    lanczosMaxMinFinder.getMinMaxEigenvalues(iterationTol,vStart,w,wTmp,oP,
+    lanczosMaxMinFinder.getMinMaxEigenvalues(minEigEstimationTol,maxEigEstimationTol,vStart,w,wTmp,oP,
     randOp,minEigValue,maxEigValue);
 
     char charBuf[256];

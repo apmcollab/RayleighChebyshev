@@ -229,11 +229,13 @@ void setHermitianErrorTol(double val)
 	hermitianErrorTol = val;
 }
 //
-// This routine uses the Lanczos procedure to obtain estimates of the algebraically
+// These two routines use the Lanczos procedure to obtain estimates of the algebraically
 // largest and algebraically smallest eigenvalue.
 //
 // The default stopping condition is when estimates of both the largest and smallest
-// eigenvalues have converged.
+// eigenvalues have converged. The first routine uses the same stopping tolerance
+// for the largest and smallest eigenvalues, while the second uses the separate
+// stopping tolerances for the largest and smallest eigenvalues.
 //
 // If one specifies that the stopping condition be based on the largest
 // eigenvalue by invoking setMaxEigStopCondition() then this routine
@@ -249,15 +251,19 @@ void getMinMaxEigenvalues(double errorTolerance, Vtype& v, Vtype& w, Vtype& wTmp
 VRandomizeOpType& randOp, double& minEigValue, double& maxEigValue)
 {
 	// Using same stopping tolerance for both minimum and maximum eigenvalue approximation
+	// and impose a minimimal degree of accuracy
 
 	if(errorTolerance > 0.01) {errorTolerance = 0.01;}
 
-	double maxEigTol = errorTolerance;
-	double minEigTol = errorTolerance;
+	double maxEigEstimationTol = errorTolerance;
+	double minEigEstimationTol = errorTolerance;
 
-	getMinMaxEigenvalues(errorTolerance, v, w, wTmp, oP, randOp, minEigValue, maxEigValue)
+	getMinMaxEigenvalues(minEigEstimationTol,maxEigEstimationTol, v, w, wTmp, oP, randOp, minEigValue, maxEigValue);
 }
-void getMinMaxEigenvalues(double maxEigTol,double minEigTol, Vtype& v, Vtype& w, Vtype& wTmp, Otype &oP,
+
+//
+
+void getMinMaxEigenvalues(double minEigTol,double maxEigTol, Vtype& v, Vtype& w, Vtype& wTmp, Otype &oP,
 VRandomizeOpType& randOp, double& minEigValue, double& maxEigValue)
 {
 	double vNorm;
@@ -266,13 +272,6 @@ VRandomizeOpType& randOp, double& minEigValue, double& maxEigValue)
 
     eigMaxVector.resize(1);
     eigMinVector.resize(1);
-
-    // impose a minimimal degree of accuracy
-
-
-
-    if(maxEigTol > 0.01) {maxEigTol = 0.01;}
-    if(minEigTol > 0.01) {minEigTol = 0.01;}
 
     if(maxEigTol < LANCZOS_SMALL_TOL_ ) { maxEigTol = LANCZOS_SMALL_TOL_; }
     if(minEigTol < LANCZOS_SMALL_TOL_ ) { minEigTol = LANCZOS_SMALL_TOL_; }
@@ -438,10 +437,10 @@ VRandomizeOpType& randOp, double& minEigValue, double& maxEigValue)
         else
         {
 
-        relErrFactor = getRelErrorFactor(lanczosMax,tol);
+        relErrFactor = getRelErrorFactor(lanczosMax,maxEigTol);
         maxDiffError = std::abs(lanczosMax-eigMaxOld)/(relErrFactor);
 
-        relErrFactor = getRelErrorFactor(lanczosMin,tol);
+        relErrFactor = getRelErrorFactor(lanczosMin,minEigTol);
         minDiffError = std::abs(lanczosMin-eigMinOld)/(relErrFactor);
 
         if(rateCompareFlag == 0)
@@ -494,10 +493,10 @@ VRandomizeOpType& randOp, double& minEigValue, double& maxEigValue)
 // 
         if(exactDiagnosticFlag == 1)
         {
-        relErrFactor = getRelErrorFactor(maxError,tol);
+        relErrFactor = getRelErrorFactor(maxError,maxEigTol);
         maxError = std::abs(maxExact - lanczosMax)/relErrFactor;
 
-        relErrFactor = getRelErrorFactor(minError,tol);
+        relErrFactor = getRelErrorFactor(minError,minEigTol);
         minError = std::abs(minExact - lanczosMin)/relErrFactor;
         }
 
@@ -526,15 +525,15 @@ VRandomizeOpType& randOp, double& minEigValue, double& maxEigValue)
 
 	    if((maxEigFlag)&&(minEigFlag))
 	    {
-	    if( (minDiffError < tol) && (maxDiffError < tol) ) exitFlag = true;
+	    if( (minDiffError < minEigTol) && (maxDiffError < maxEigTol)) {exitFlag = true;}
 	    }
 	    else if(maxEigFlag)
 	    {
-	    if(maxDiffError < tol) exitFlag = true;
+	    if(maxDiffError < maxEigTol) {exitFlag = true;}
 	    }
 	    else if(minEigFlag)
 	    {
-	    if(minDiffError < tol) exitFlag = true;
+	    if(minDiffError < minEigTol) {exitFlag = true;}
 	    }
 
         }
