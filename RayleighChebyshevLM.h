@@ -199,7 +199,7 @@
 #define DEFAULT_USE_JACOBI_FLAG              true
 #endif
 
-#define RAYLEIGH_CHEBYSHEV_SMALL_TOL_      1.0e-11
+#define RAYLEIGH_CHEBYSHEV_SMALL_TOL_      1.0e-12
 
 #ifdef TIMING_
 #include "ClockIt.h"
