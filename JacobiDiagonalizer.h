@@ -307,7 +307,7 @@ void computeEigenDecomposition()
     double M1; double M2;
 
     double signTau = 1.0;
-    long sweepCount = 0;
+    // long sweepCount = 0;
 
     while(tauThreshold > JACOBI_DIAGONALIZER_TOL)
     {
@@ -369,8 +369,8 @@ void computeEigenDecomposition()
 
     omega          = OffFrobeniusNorm2();
     tauThreshold   = std::sqrt(omega/N);
-    sweepCount++;
-
+    
+    // sweepCount++;
     //cout << "Threshold : " << tauThreshold << endl;
     }
 
