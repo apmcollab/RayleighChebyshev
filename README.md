@@ -6,14 +6,14 @@ The eigenvalues are returned in a vector<double> instance while the eigenvectors
 
 OpenMP multi-thread usage is enabled by defining _OPENMP
 
-The Rayleigh-Chebyshev method is described in paper
+The Rayleigh-Chebyshev method is described in the paper
 
 Christopher R. Anderson, "A Rayleigh–Chebyshev procedure for finding the smallest eigenvalues and associated eigenvectors of large sparse Hermitian matrices",
 Journal of Computational Physics,
 Volume 229, Issue 19,2010,Pages 7477-7487, ISSN 0021-9991,
 https://doi.org/10.1016/j.jcp.2010.06.030.
 
-The name comes the fact that the efficiency of the underlying subspace iteration is obtained through the use of Chebyshev polynomial acceleration where the coefficients of the polynomials are adaptively determined from information obtained from the Rayleigh quotient. It is a subspace method specifically designed for determining a small number of lowest eigenvalues and eigenvectors of Schrodinger operators where it is necessary to identify and distinguish between degenerate and nearly degenerate eigenstates. 
+The name comes from the fact that the efficiency of the underlying subspace iteration is obtained through the use of Chebyshev polynomial acceleration where the coefficients of the polynomials are adaptively determined from information obtained from the Rayleigh quotient. It is a subspace method specifically designed for determining a small number of the lowest eigenvalues and eigenvectors of Schrodinger operators where it is necessary to identify and distinguish between degenerate and nearly degenerate eigenstates. 
 
 ### Prerequisites
 C++17, LAPACK
